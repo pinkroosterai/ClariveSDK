@@ -1,0 +1,21 @@
+# C#
+sdks/csharp/**/bin/
+sdks/csharp/**/obj/
+*.user
+*.suo
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+.venv/
+
+# TypeScript
+sdks/typescript/node_modules/
+sdks/typescript/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp

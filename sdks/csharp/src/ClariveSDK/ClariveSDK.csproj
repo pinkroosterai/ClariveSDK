@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>ClariveSDK</RootNamespace>
+    <PackageId>ClariveSDK</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Official C# SDK for the Clarive Public API</Description>
+  </PropertyGroup>
+
+</Project>
