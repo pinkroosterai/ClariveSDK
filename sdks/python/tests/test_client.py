@@ -10,7 +10,13 @@ from clarive.exceptions import (
     ClariveNotFoundError,
     ClariveValidationError,
 )
-from clarive.models import GenerateRequest
+from clarive.models import (
+    EntrySummary,
+    GenerateRequest,
+    ListEntriesOptions,
+    PaginatedResponse,
+    TagInfo,
+)
 
 ENTRY_ID = UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
 BASE_URL = "https://app.clarive.com/public/v1/"
@@ -39,7 +45,36 @@ ENTRY_RESPONSE = {
             ],
         }
     ],
+    "tags": ["test"],
+    "updatedAt": "2026-03-18T10:00:00Z",
+    "publishedAt": "2026-03-18T10:00:00Z",
 }
+
+LIST_ENTRIES_RESPONSE = {
+    "items": [
+        {
+            "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "title": "Test Entry",
+            "version": 1,
+            "hasSystemMessage": True,
+            "isTemplate": True,
+            "isChain": False,
+            "promptCount": 1,
+            "firstPromptPreview": "Hello {{name}}",
+            "tags": ["test"],
+            "createdAt": "2026-03-18T10:00:00Z",
+            "updatedAt": "2026-03-18T10:00:00Z",
+        }
+    ],
+    "totalCount": 1,
+    "page": 1,
+    "pageSize": 50,
+}
+
+LIST_TAGS_RESPONSE = [
+    {"name": "test", "entryCount": 5},
+    {"name": "production", "entryCount": 3},
+]
 
 GENERATE_RESPONSE = {
     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -152,3 +187,68 @@ class TestClariveClientLifecycle:
         assert client._client.is_closed is False
         await client.aclose()
         assert client._client.is_closed is True
+
+
+@pytest.mark.asyncio
+class TestClariveClientListEntries:
+    @respx.mock
+    async def test_list_entries_returns_paginated_response(self) -> None:
+        route = respx.get(f"{BASE_URL}entries").mock(
+            return_value=httpx.Response(200, json=LIST_ENTRIES_RESPONSE)
+        )
+
+        async with ClariveClient(api_key="cl_testkey") as client:
+            result = await client.list_entries()
+
+        assert route.called
+        assert isinstance(result, PaginatedResponse)
+        assert result.total_count == 1
+        assert result.page == 1
+        assert result.page_size == 50
+        assert len(result.items) == 1
+
+        item = result.items[0]
+        assert isinstance(item, EntrySummary)
+        assert item.id == ENTRY_ID
+        assert item.title == "Test Entry"
+        assert item.has_system_message is True
+        assert item.is_template is True
+        assert item.is_chain is False
+        assert item.prompt_count == 1
+        assert item.first_prompt_preview == "Hello {{name}}"
+        assert item.tags == ["test"]
+
+    @respx.mock
+    async def test_list_entries_passes_query_params(self) -> None:
+        route = respx.get(url__regex=rf"{BASE_URL}entries\?.*").mock(
+            return_value=httpx.Response(200, json=LIST_ENTRIES_RESPONSE)
+        )
+
+        options = ListEntriesOptions(page=2, search="test")
+        async with ClariveClient(api_key="cl_testkey") as client:
+            await client.list_entries(options)
+
+        assert route.called
+        request_url = str(route.calls[0].request.url)
+        assert "page=2" in request_url
+        assert "search=test" in request_url
+
+
+@pytest.mark.asyncio
+class TestClariveClientListTags:
+    @respx.mock
+    async def test_list_tags_returns_tag_list(self) -> None:
+        route = respx.get(f"{BASE_URL}tags").mock(
+            return_value=httpx.Response(200, json=LIST_TAGS_RESPONSE)
+        )
+
+        async with ClariveClient(api_key="cl_testkey") as client:
+            result = await client.list_tags()
+
+        assert route.called
+        assert len(result) == 2
+        assert all(isinstance(t, TagInfo) for t in result)
+        assert result[0].name == "test"
+        assert result[0].entry_count == 5
+        assert result[1].name == "production"
+        assert result[1].entry_count == 3

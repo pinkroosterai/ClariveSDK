@@ -87,6 +87,44 @@ public class ClariveClient : IClariveClient
         return result ?? throw new InvalidOperationException("Response deserialized to null.");
     }
 
+    /// <inheritdoc />
+    public async Task<PaginatedResponse<EntrySummary>> ListEntriesAsync(ListEntriesOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var query = BuildListEntriesQuery(options);
+        var url = string.IsNullOrEmpty(query) ? "entries" : $"entries?{query}";
+
+        var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<EntrySummary>>(JsonOptions, cancellationToken).ConfigureAwait(false);
+        return result ?? throw new InvalidOperationException("Response deserialized to null.");
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TagInfo>> ListTagsAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync("tags", cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+
+        var result = await response.Content.ReadFromJsonAsync<List<TagInfo>>(JsonOptions, cancellationToken).ConfigureAwait(false);
+        return result ?? throw new InvalidOperationException("Response deserialized to null.");
+    }
+
+    private static string BuildListEntriesQuery(ListEntriesOptions? options)
+    {
+        if (options is null) return string.Empty;
+
+        var parts = new List<string>();
+        if (options.FolderId is not null) parts.Add($"folderId={Uri.EscapeDataString(options.FolderId)}");
+        if (options.Tags is not null) parts.Add($"tags={Uri.EscapeDataString(options.Tags)}");
+        if (options.TagMode is not null) parts.Add($"tagMode={Uri.EscapeDataString(options.TagMode)}");
+        if (options.Page is not null) parts.Add($"page={options.Page}");
+        if (options.PageSize is not null) parts.Add($"pageSize={options.PageSize}");
+        if (options.Search is not null) parts.Add($"search={Uri.EscapeDataString(options.Search)}");
+        if (options.SortBy is not null) parts.Add($"sortBy={Uri.EscapeDataString(options.SortBy)}");
+        return string.Join("&", parts);
+    }
+
     private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)

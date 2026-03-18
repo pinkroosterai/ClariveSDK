@@ -8,9 +8,15 @@ namespace ClariveSDK.Models;
 /// <param name="SystemMessage">Optional system message for the LLM. May contain <c>{{variable}}</c> placeholders.</param>
 /// <param name="Version">The published version number.</param>
 /// <param name="Prompts">The ordered list of prompts in this entry.</param>
+/// <param name="Tags">Tags assigned to the entry.</param>
+/// <param name="UpdatedAt">When the entry was last updated.</param>
+/// <param name="PublishedAt">When the current version was published.</param>
 public record PromptEntry(
     Guid Id,
     string Title,
     string? SystemMessage,
     int Version,
-    IReadOnlyList<Prompt> Prompts);
+    IReadOnlyList<Prompt> Prompts,
+    IReadOnlyList<string> Tags,
+    DateTime UpdatedAt,
+    DateTime? PublishedAt);

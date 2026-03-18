@@ -31,4 +31,19 @@ public interface IClariveClient
     /// <exception cref="Exceptions.ClariveAuthenticationException">The API key is invalid or missing.</exception>
     /// <exception cref="Exceptions.ClariveRateLimitException">The rate limit has been exceeded.</exception>
     Task<GenerateResponse> GenerateAsync(Guid entryId, GenerateRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists published prompt entries with optional filtering, search, and pagination.
+    /// </summary>
+    /// <param name="options">Optional query parameters for filtering, pagination, and sorting.</param>
+    /// <param name="cancellationToken">A token to cancel the request.</param>
+    /// <returns>A paginated list of entry summaries.</returns>
+    Task<PaginatedResponse<EntrySummary>> ListEntriesAsync(ListEntriesOptions? options = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists all tags with their entry counts.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the request.</param>
+    /// <returns>A list of tags with entry counts.</returns>
+    Task<IReadOnlyList<TagInfo>> ListTagsAsync(CancellationToken cancellationToken = default);
 }

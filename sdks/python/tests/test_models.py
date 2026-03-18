@@ -30,6 +30,9 @@ ENTRY_JSON = {
             ],
         }
     ],
+    "tags": ["test"],
+    "updatedAt": "2026-03-18T10:00:00Z",
+    "publishedAt": "2026-03-18T10:00:00Z",
 }
 
 GENERATE_RESPONSE_JSON = {
@@ -59,6 +62,9 @@ class TestPromptEntryFromDict:
         assert entry.system_message == expected_msg
         assert entry.version == 3
         assert len(entry.prompts) == 1
+        assert entry.tags == ["test"]
+        assert entry.updated_at is not None
+        assert entry.published_at is not None
 
     def test_deserializes_prompt_with_template_fields(self) -> None:
         entry = PromptEntry.from_dict(ENTRY_JSON)

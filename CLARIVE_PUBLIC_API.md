@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Clarive Public API provides programmatic access to published prompt entries. It allows you to retrieve prompt definitions and generate rendered prompts with template variable substitution.
+The Clarive Public API provides programmatic access to published prompt entries. It allows you to list, retrieve, and render prompt entries with template variable substitution.
 
 - **Base URL**: `https://<your-instance>.clarive.app/public/v1`
 - **Protocol**: HTTPS
@@ -36,6 +36,78 @@ X-Api-Key: cl_your_api_key_here
 
 ## Endpoints
 
+### List Published Entries
+
+Lists published prompt entries with optional filtering, search, and pagination.
+
+```
+GET /public/v1/entries
+```
+
+#### Query Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `folderId` | string | No | all | Folder ID (GUID) to filter by, or `"all"` for all folders |
+| `tags` | string | No | — | Comma-separated tag names to filter by |
+| `tagMode` | string | No | `"or"` | Tag filter mode: `"and"` (all tags) or `"or"` (any tag) |
+| `page` | integer | No | 1 | Page number (1-based) |
+| `pageSize` | integer | No | 50 | Items per page (max 100) |
+| `search` | string | No | — | Search by title (case-insensitive) |
+| `sortBy` | string | No | `"recent"` | Sort order: `"recent"`, `"alphabetical"`, or `"oldest"` |
+
+#### Response `200 OK`
+
+```json
+{
+  "items": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "title": "Customer Support Reply",
+      "version": 3,
+      "hasSystemMessage": true,
+      "isTemplate": true,
+      "isChain": false,
+      "promptCount": 1,
+      "firstPromptPreview": "Draft a reply to the following customer inquiry...",
+      "tags": ["support", "customer"],
+      "createdAt": "2026-03-15T10:00:00Z",
+      "updatedAt": "2026-03-18T10:00:00Z"
+    }
+  ],
+  "totalCount": 42,
+  "page": 1,
+  "pageSize": 50
+}
+```
+
+#### Entry Summary Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string (GUID) | Entry unique identifier |
+| `title` | string | Display name of the entry |
+| `version` | integer | Published version number |
+| `hasSystemMessage` | boolean | Whether the entry has a system message |
+| `isTemplate` | boolean | Whether the entry contains template variables |
+| `isChain` | boolean | Whether the entry has multiple prompts |
+| `promptCount` | integer | Number of prompts in the entry |
+| `firstPromptPreview` | string \| null | Preview text from the first prompt |
+| `tags` | string[] | Tags assigned to the entry |
+| `createdAt` | string (ISO 8601) | When the entry was created |
+| `updatedAt` | string (ISO 8601) | When the entry was last updated |
+
+#### Pagination Wrapper
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `items` | array | Items on the current page |
+| `totalCount` | integer | Total number of items across all pages |
+| `page` | integer | Current page number (1-based) |
+| `pageSize` | integer | Number of items per page |
+
+---
+
 ### Get Published Prompt Entry
 
 Retrieves the currently published version of a prompt entry, including its prompts and template field definitions.
@@ -65,6 +137,8 @@ GET /public/v1/entries/{entryId}
       "isTemplate": true,
       "templateFields": [
         {
+          "id": "019ce71e-651d-7003-981e-f7d916f1bcdb",
+          "promptId": "7d38ca52-ad3a-4fda-8def-58b97a590937",
           "name": "customerMessage",
           "type": "string",
           "enumValues": null,
@@ -74,7 +148,10 @@ GET /public/v1/entries/{entryId}
         }
       ]
     }
-  ]
+  ],
+  "tags": ["support", "customer"],
+  "updatedAt": "2026-03-18T10:00:00Z",
+  "publishedAt": "2026-03-17T14:30:00Z"
 }
 ```
 
@@ -91,11 +168,16 @@ GET /public/v1/entries/{entryId}
 | `prompts[].order` | integer | Display/execution order |
 | `prompts[].isTemplate` | boolean | Whether this prompt contains template variables |
 | `prompts[].templateFields` | array \| null | Template variable definitions (present only when `isTemplate` is `true`) |
+| `tags` | string[] | Tags assigned to the entry |
+| `updatedAt` | string (ISO 8601) | When the entry was last updated |
+| `publishedAt` | string (ISO 8601) \| null | When the current version was published |
 
 #### Template Field Object
 
 | Field | Type | Description |
 |-------|------|-------------|
+| `id` | string (GUID) | Unique identifier of the template field |
+| `promptId` | string (GUID) | Identifier of the prompt this field belongs to |
 | `name` | string | Variable name (matches `{{name}}` in content) |
 | `type` | string | One of: `string`, `int`, `float`, `enum` |
 | `enumValues` | string[] \| null | Allowed values (only for `enum` type) |
@@ -174,6 +256,32 @@ POST /public/v1/entries/{entryId}/generate
 
 ---
 
+### List Tags
+
+Lists all tags with their entry counts.
+
+```
+GET /public/v1/tags
+```
+
+#### Response `200 OK`
+
+```json
+[
+  { "name": "support", "entryCount": 12 },
+  { "name": "onboarding", "entryCount": 5 }
+]
+```
+
+#### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | The tag name |
+| `entryCount` | integer | Number of entries with this tag |
+
+---
+
 ## Template Variable Syntax
 
 Template variables in prompt content use the `{{variableName}}` syntax. The parser supports type annotations and constraints:
@@ -209,7 +317,8 @@ The `details` field is optional and only present for validation errors.
 | HTTP Status | Code | Description |
 |-------------|------|-------------|
 | 401 | `UNAUTHORIZED` | Invalid or missing API key |
-| 404 | `NOT_FOUND` | Entry does not exist, is trashed, or has no published version |
+| 404 | `ENTRY_NOT_FOUND` | Entry does not exist or is trashed |
+| 404 | `NO_PUBLISHED_VERSION` | Entry exists but has no published version |
 | 422 | `VALIDATION_ERROR` | Template field validation failed (see `details` for per-field errors) |
 | 429 | `RATE_LIMITED` | Rate limit exceeded (20 req/min) |
 | 500 | `INTERNAL_ERROR` | Unexpected server error |
@@ -254,8 +363,8 @@ All public API calls are logged with:
 
 - Tenant ID
 - API key ID and name
-- Action type (`ApiGet` or `ApiGenerate`)
-- Entry ID and title
+- Action type (`ApiGet`, `ApiGenerate`, or `ApiList`)
+- Entry ID and title (where applicable)
 - Timestamp
 
 ---
@@ -263,6 +372,13 @@ All public API calls are logged with:
 ## Examples
 
 ### cURL
+
+**List entries:**
+
+```bash
+curl -X GET "https://demo.clarive.app/public/v1/entries?page=1&pageSize=10&search=support" \
+  -H "X-Api-Key: cl_your_api_key_here"
+```
 
 **Get an entry:**
 
@@ -285,64 +401,81 @@ curl -X POST "https://demo.clarive.app/public/v1/entries/3fa85f64-5717-4562-b3fc
   }'
 ```
 
+**List tags:**
+
+```bash
+curl -X GET "https://demo.clarive.app/public/v1/tags" \
+  -H "X-Api-Key: cl_your_api_key_here"
+```
+
 ### Python
 
 ```python
-import requests
+from clarive import ClariveClient, ListEntriesOptions, GenerateRequest
 
-BASE_URL = "https://demo.clarive.app/public/v1"
-API_KEY = "cl_your_api_key_here"
-ENTRY_ID = "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+async with ClariveClient(api_key="cl_your_api_key_here", base_url="https://demo.clarive.app") as client:
+    # List entries
+    entries = await client.list_entries(ListEntriesOptions(search="support", page=1))
+    for entry in entries.items:
+        print(f"{entry.title} (v{entry.version})")
 
-headers = {"X-Api-Key": API_KEY}
+    # Get entry
+    entry = await client.get_entry(entries.items[0].id)
 
-# Get entry
-response = requests.get(f"{BASE_URL}/entries/{ENTRY_ID}", headers=headers)
-entry = response.json()
+    # Generate
+    result = await client.generate(entry.id, GenerateRequest(fields={"userName": "Alice"}))
 
-# Generate
-response = requests.post(
-    f"{BASE_URL}/entries/{ENTRY_ID}/generate",
-    headers=headers,
-    json={"fields": {"userName": "Alice"}},
-)
-result = response.json()
+    # List tags
+    tags = await client.list_tags()
 ```
 
 ### TypeScript
 
 ```typescript
-const BASE_URL = "https://demo.clarive.app/public/v1";
-const API_KEY = "cl_your_api_key_here";
-const ENTRY_ID = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+import { ClariveClient } from "clarive-sdk";
+
+const client = new ClariveClient({ apiKey: "cl_your_api_key_here", baseUrl: "https://demo.clarive.app" });
+
+// List entries
+const entries = await client.listEntries({ search: "support", page: 1 });
+for (const entry of entries.items) {
+  console.log(`${entry.title} (v${entry.version})`);
+}
 
 // Get entry
-const entry = await fetch(`${BASE_URL}/entries/${ENTRY_ID}`, {
-  headers: { "X-Api-Key": API_KEY },
-}).then((r) => r.json());
+const entry = await client.getEntry(entries.items[0].id);
 
 // Generate
-const result = await fetch(`${BASE_URL}/entries/${ENTRY_ID}/generate`, {
-  method: "POST",
-  headers: { "X-Api-Key": API_KEY, "Content-Type": "application/json" },
-  body: JSON.stringify({ fields: { userName: "Alice" } }),
-}).then((r) => r.json());
+const result = await client.generate(entry.id, { fields: { userName: "Alice" } });
+
+// List tags
+const tags = await client.listTags();
 ```
 
 ### C#
 
 ```csharp
-using var client = new HttpClient();
-client.BaseAddress = new Uri("https://demo.clarive.app/public/v1/");
-client.DefaultRequestHeaders.Add("X-Api-Key", "cl_your_api_key_here");
+using var httpClient = new HttpClient();
+var client = new ClariveClient(httpClient, new ClariveOptions
+{
+    ApiKey = "cl_your_api_key_here",
+    BaseUrl = "https://demo.clarive.app"
+});
 
-var entryId = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
+// List entries
+var entries = await client.ListEntriesAsync(new ListEntriesOptions { Search = "support", Page = 1 });
+foreach (var summary in entries.Items)
+    Console.WriteLine($"{summary.Title} (v{summary.Version})");
 
 // Get entry
-var entry = await client.GetFromJsonAsync<PublicPromptEntry>($"entries/{entryId}");
+var entry = await client.GetEntryAsync(entries.Items[0].Id);
 
 // Generate
-var request = new { fields = new Dictionary<string, string> { ["userName"] = "Alice" } };
-var response = await client.PostAsJsonAsync($"entries/{entryId}/generate", request);
-var result = await response.Content.ReadFromJsonAsync<PublicGenerateResponse>();
+var result = await client.GenerateAsync(entry.Id, new GenerateRequest
+{
+    Fields = new Dictionary<string, string> { ["userName"] = "Alice" }
+});
+
+// List tags
+var tags = await client.ListTagsAsync();
 ```

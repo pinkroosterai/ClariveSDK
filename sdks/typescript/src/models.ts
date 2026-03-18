@@ -22,6 +22,9 @@ export interface PromptEntry {
   systemMessage: string | null;
   version: number;
   prompts: Prompt[];
+  tags: string[];
+  updatedAt: string;
+  publishedAt: string | null;
 }
 
 export interface GenerateRequest {
@@ -39,4 +42,40 @@ export interface GenerateResponse {
   version: number;
   systemMessage: string | null;
   renderedPrompts: RenderedPrompt[];
+}
+
+export interface EntrySummary {
+  id: string;
+  title: string;
+  version: number;
+  hasSystemMessage: boolean;
+  isTemplate: boolean;
+  isChain: boolean;
+  promptCount: number;
+  firstPromptPreview: string | null;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface TagInfo {
+  name: string;
+  entryCount: number;
+}
+
+export interface ListEntriesOptions {
+  folderId?: string;
+  tags?: string;
+  tagMode?: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  sortBy?: string;
 }

@@ -33,6 +33,9 @@ ENTRY_RESPONSE = {
             ],
         }
     ],
+    "tags": ["test"],
+    "updatedAt": "2026-03-18T10:00:00Z",
+    "publishedAt": "2026-03-18T10:00:00Z",
 }
 
 GENERATE_RESPONSE = {

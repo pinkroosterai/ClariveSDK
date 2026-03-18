@@ -37,7 +37,10 @@ public class ModelDeserializationTests
                 }
               ]
             }
-          ]
+          ],
+          "tags": ["test"],
+          "updatedAt": "2026-03-18T10:00:00Z",
+          "publishedAt": "2026-03-18T10:00:00Z"
         }
         """;
 
@@ -75,7 +78,10 @@ public class ModelDeserializationTests
           "title": "Simple Prompt",
           "systemMessage": null,
           "version": 1,
-          "prompts": []
+          "prompts": [],
+          "tags": ["test"],
+          "updatedAt": "2026-03-18T10:00:00Z",
+          "publishedAt": "2026-03-18T10:00:00Z"
         }
         """;
 

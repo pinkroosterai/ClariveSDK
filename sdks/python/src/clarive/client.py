@@ -10,12 +10,42 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 
 from clarive.circuitbreaker import CircuitBreaker
 from clarive.exceptions import ClariveApiError, ClariveRateLimitError
-from clarive.models import GenerateRequest, GenerateResponse, PromptEntry
+from clarive.models import (
+    EntrySummary,
+    GenerateRequest,
+    GenerateResponse,
+    ListEntriesOptions,
+    PaginatedResponse,
+    PromptEntry,
+    TagInfo,
+)
 from clarive.options import ClariveOptions
 
 
 def _build_base_url(base_url: str) -> str:
     return f"{base_url.rstrip('/')}/public/v1/"
+
+
+def _build_list_entries_query(options: ListEntriesOptions | None) -> str:
+    """Build query string from ListEntriesOptions."""
+    if options is None:
+        return ""
+    parts: list[str] = []
+    if options.folder_id is not None:
+        parts.append(f"folderId={options.folder_id}")
+    if options.tags is not None:
+        parts.append(f"tags={options.tags}")
+    if options.tag_mode is not None:
+        parts.append(f"tagMode={options.tag_mode}")
+    if options.page is not None:
+        parts.append(f"page={options.page}")
+    if options.page_size is not None:
+        parts.append(f"pageSize={options.page_size}")
+    if options.search is not None:
+        parts.append(f"search={options.search}")
+    if options.sort_by is not None:
+        parts.append(f"sortBy={options.sort_by}")
+    return "&".join(parts)
 
 
 def _handle_error_response(response: httpx.Response) -> None:
@@ -214,6 +244,20 @@ class ClariveClient(_BaseClariveClient):
         data: dict[str, object] = response.json()
         return GenerateResponse.from_dict(data)
 
+    async def list_entries(self, options: ListEntriesOptions | None = None) -> PaginatedResponse:
+        """List published prompt entries with optional filtering and pagination."""
+        query = _build_list_entries_query(options)
+        url = f"entries?{query}" if query else "entries"
+        response = await self._request_with_resilience("GET", url)
+        data: dict[str, object] = response.json()
+        return PaginatedResponse.from_dict(data, EntrySummary.from_dict)
+
+    async def list_tags(self) -> list[TagInfo]:
+        """List all tags with their entry counts."""
+        response = await self._request_with_resilience("GET", "tags")
+        data: list[dict[str, Any]] = response.json()
+        return [TagInfo.from_dict(t) for t in data]
+
 
 class ClariveClientSync(_BaseClariveClient):
     """Synchronous client for the Clarive Public API.
@@ -335,3 +379,17 @@ class ClariveClientSync(_BaseClariveClient):
         )
         data: dict[str, object] = response.json()
         return GenerateResponse.from_dict(data)
+
+    def list_entries(self, options: ListEntriesOptions | None = None) -> PaginatedResponse:
+        """List published prompt entries with optional filtering and pagination."""
+        query = _build_list_entries_query(options)
+        url = f"entries?{query}" if query else "entries"
+        response = self._request_with_resilience("GET", url)
+        data: dict[str, object] = response.json()
+        return PaginatedResponse.from_dict(data, EntrySummary.from_dict)
+
+    def list_tags(self) -> list[TagInfo]:
+        """List all tags with their entry counts."""
+        response = self._request_with_resilience("GET", "tags")
+        data: list[dict[str, Any]] = response.json()
+        return [TagInfo.from_dict(t) for t in data]

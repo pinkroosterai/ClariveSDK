@@ -27,7 +27,10 @@ public class ClariveClientTests
     {
         var expectedEntry = new PromptEntry(
             TestEntryId, "Test Entry", null, 1,
-            new List<Prompt>());
+            new List<Prompt>(),
+            new List<string> { "test" },
+            DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime(),
+            DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime());
 
         var handler = new MockHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
@@ -130,5 +133,93 @@ public class ClariveClientTests
 
         await Assert.ThrowsAsync<ClariveApiException>(
             () => client.GetEntryAsync(TestEntryId));
+    }
+
+    [Fact]
+    public async Task ListEntriesAsync_ReturnsPaginatedResponse()
+    {
+        var responseBody = new
+        {
+            items = new[]
+            {
+                new
+                {
+                    id = TestEntryId,
+                    title = "Test Entry",
+                    version = 1,
+                    hasSystemMessage = true,
+                    isTemplate = true,
+                    isChain = false,
+                    promptCount = 1,
+                    firstPromptPreview = "Hello {{name}}",
+                    tags = new[] { "test" },
+                    createdAt = "2026-03-18T10:00:00Z",
+                    updatedAt = "2026-03-18T10:00:00Z"
+                }
+            },
+            totalCount = 1,
+            page = 1,
+            pageSize = 50
+        };
+
+        var handler = new MockHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(responseBody, JsonOptions),
+                    System.Text.Encoding.UTF8, "application/json")
+            });
+
+        var httpClient = new HttpClient(handler);
+        var client = new ClariveClient(httpClient, CreateOptions());
+
+        var result = await client.ListEntriesAsync();
+
+        Assert.NotNull(handler.LastRequest);
+        Assert.Equal(HttpMethod.Get, handler.LastRequest.Method);
+        Assert.Contains("entries", handler.LastRequest.RequestUri?.ToString() ?? "");
+
+        Assert.Equal(1, result.TotalCount);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(50, result.PageSize);
+        Assert.Single(result.Items);
+        Assert.Equal(TestEntryId, result.Items[0].Id);
+        Assert.Equal("Test Entry", result.Items[0].Title);
+        Assert.True(result.Items[0].HasSystemMessage);
+        Assert.True(result.Items[0].IsTemplate);
+        Assert.False(result.Items[0].IsChain);
+    }
+
+    [Fact]
+    public async Task ListTagsAsync_ReturnsTagList()
+    {
+        var responseBody = new[]
+        {
+            new { name = "test", entryCount = 5 },
+            new { name = "production", entryCount = 3 }
+        };
+
+        var handler = new MockHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(responseBody, JsonOptions),
+                    System.Text.Encoding.UTF8, "application/json")
+            });
+
+        var httpClient = new HttpClient(handler);
+        var client = new ClariveClient(httpClient, CreateOptions());
+
+        var result = await client.ListTagsAsync();
+
+        Assert.NotNull(handler.LastRequest);
+        Assert.Equal(HttpMethod.Get, handler.LastRequest.Method);
+        Assert.Contains("tags", handler.LastRequest.RequestUri?.ToString() ?? "");
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("test", result[0].Name);
+        Assert.Equal(5, result[0].EntryCount);
+        Assert.Equal("production", result[1].Name);
+        Assert.Equal(3, result[1].EntryCount);
     }
 }

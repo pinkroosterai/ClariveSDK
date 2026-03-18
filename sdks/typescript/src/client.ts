@@ -1,6 +1,14 @@
 import { CircuitBreaker } from "./circuitbreaker.js";
 import { ClariveApiError, ClariveRateLimitError } from "./errors.js";
-import type { GenerateRequest, GenerateResponse, PromptEntry } from "./models.js";
+import type {
+  EntrySummary,
+  GenerateRequest,
+  GenerateResponse,
+  ListEntriesOptions,
+  PaginatedResponse,
+  PromptEntry,
+  TagInfo,
+} from "./models.js";
 import { type ClariveOptions, DEFAULT_BASE_URL, validateOptions } from "./options.js";
 import { DEFAULT_RESILIENCE_OPTIONS } from "./resilience.js";
 import { type RetryOptions, retryWithBackoff } from "./retry.js";
@@ -120,5 +128,26 @@ export class ClariveClient {
       JSON.stringify(request),
     );
     return (await response.json()) as GenerateResponse;
+  }
+
+  async listEntries(options?: ListEntriesOptions): Promise<PaginatedResponse<EntrySummary>> {
+    const params = new URLSearchParams();
+    if (options?.folderId) params.set("folderId", options.folderId);
+    if (options?.tags) params.set("tags", options.tags);
+    if (options?.tagMode) params.set("tagMode", options.tagMode);
+    if (options?.page) params.set("page", String(options.page));
+    if (options?.pageSize) params.set("pageSize", String(options.pageSize));
+    if (options?.search) params.set("search", options.search);
+    if (options?.sortBy) params.set("sortBy", options.sortBy);
+
+    const query = params.toString();
+    const url = query ? `${this.baseUrl}/entries?${query}` : `${this.baseUrl}/entries`;
+    const response = await this.requestWithResilience("GET", url);
+    return (await response.json()) as PaginatedResponse<EntrySummary>;
+  }
+
+  async listTags(): Promise<TagInfo[]> {
+    const response = await this.requestWithResilience("GET", `${this.baseUrl}/tags`);
+    return (await response.json()) as TagInfo[];
   }
 }

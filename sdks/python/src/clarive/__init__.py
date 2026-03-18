@@ -11,11 +11,15 @@ from clarive.exceptions import (
     ClariveValidationError,
 )
 from clarive.models import (
+    EntrySummary,
     GenerateRequest,
     GenerateResponse,
+    ListEntriesOptions,
+    PaginatedResponse,
     Prompt,
     PromptEntry,
     RenderedPrompt,
+    TagInfo,
     TemplateField,
 )
 from clarive.options import ClariveOptions, ResilienceOptions
@@ -34,10 +38,14 @@ __all__ = [
     "ClariveRateLimitError",
     "ClariveValidationError",
     "ResilienceOptions",
+    "EntrySummary",
     "GenerateRequest",
     "GenerateResponse",
+    "ListEntriesOptions",
+    "PaginatedResponse",
     "Prompt",
     "PromptEntry",
     "RenderedPrompt",
+    "TagInfo",
     "TemplateField",
 ]

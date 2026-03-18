@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
@@ -55,6 +56,18 @@ class Prompt:
         )
 
 
+def _parse_datetime(value: Any) -> datetime:
+    """Parse an ISO 8601 datetime string."""
+    return datetime.fromisoformat(str(value))
+
+
+def _parse_datetime_optional(value: Any) -> datetime | None:
+    """Parse an optional ISO 8601 datetime string."""
+    if value is None:
+        return None
+    return datetime.fromisoformat(str(value))
+
+
 @dataclass(frozen=True, slots=True)
 class PromptEntry:
     """A published prompt entry retrieved from the Clarive API."""
@@ -64,6 +77,9 @@ class PromptEntry:
     system_message: str | None
     version: int
     prompts: list[Prompt]
+    tags: list[str]
+    updated_at: datetime
+    published_at: datetime | None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PromptEntry:
@@ -73,6 +89,9 @@ class PromptEntry:
             system_message=data.get("systemMessage"),
             version=int(data["version"]),
             prompts=[Prompt.from_dict(p) for p in data["prompts"]],
+            tags=data.get("tags", []),
+            updated_at=_parse_datetime(data["updatedAt"]),
+            published_at=_parse_datetime_optional(data.get("publishedAt")),
         )
 
 
@@ -120,3 +139,83 @@ class GenerateRequest:
 
     def to_dict(self) -> dict[str, Any]:
         return {"fields": self.fields}
+
+
+@dataclass(frozen=True, slots=True)
+class EntrySummary:
+    """Compact representation of a published entry from the list endpoint."""
+
+    id: UUID
+    title: str
+    version: int
+    has_system_message: bool
+    is_template: bool
+    is_chain: bool
+    prompt_count: int
+    first_prompt_preview: str | None
+    tags: list[str]
+    created_at: datetime
+    updated_at: datetime
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> EntrySummary:
+        return cls(
+            id=UUID(str(data["id"])),
+            title=str(data["title"]),
+            version=int(data["version"]),
+            has_system_message=bool(data["hasSystemMessage"]),
+            is_template=bool(data["isTemplate"]),
+            is_chain=bool(data["isChain"]),
+            prompt_count=int(data["promptCount"]),
+            first_prompt_preview=data.get("firstPromptPreview"),
+            tags=data.get("tags", []),
+            created_at=_parse_datetime(data["createdAt"]),
+            updated_at=_parse_datetime(data["updatedAt"]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class PaginatedResponse:
+    """Paginated response wrapper from list endpoints."""
+
+    items: list[Any]
+    total_count: int
+    page: int
+    page_size: int
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any], item_factory: Any) -> PaginatedResponse:
+        return cls(
+            items=[item_factory(item) for item in data["items"]],
+            total_count=int(data["totalCount"]),
+            page=int(data["page"]),
+            page_size=int(data["pageSize"]),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class TagInfo:
+    """A tag with its entry count, returned by the list tags endpoint."""
+
+    name: str
+    entry_count: int
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TagInfo:
+        return cls(
+            name=str(data["name"]),
+            entry_count=int(data["entryCount"]),
+        )
+
+
+@dataclass(slots=True)
+class ListEntriesOptions:
+    """Query parameters for the list entries endpoint."""
+
+    folder_id: str | None = None
+    tags: str | None = None
+    tag_mode: str | None = None
+    page: int | None = None
+    page_size: int | None = None
+    search: str | None = None
+    sort_by: str | None = None

@@ -9,11 +9,15 @@ export {
   ClariveValidationError,
 } from "./errors.js";
 export type {
+  EntrySummary,
   GenerateRequest,
   GenerateResponse,
+  ListEntriesOptions,
+  PaginatedResponse,
   Prompt,
   PromptEntry,
   RenderedPrompt,
+  TagInfo,
   TemplateField,
 } from "./models.js";
 export type { ClariveOptions } from "./options.js";

@@ -23,6 +23,9 @@ ENTRY_RESPONSE = {
     "systemMessage": None,
     "version": 1,
     "prompts": [],
+    "tags": ["test"],
+    "updatedAt": "2026-03-18T10:00:00Z",
+    "publishedAt": "2026-03-18T10:00:00Z",
 }
 
 

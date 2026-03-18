@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ClariveClient } from "../src/client.js";
 import { ClariveApiError, ClariveNotFoundError, ClariveValidationError } from "../src/errors.js";
-import type { GenerateResponse, PromptEntry } from "../src/models.js";
+import type {
+  EntrySummary,
+  GenerateResponse,
+  PaginatedResponse,
+  PromptEntry,
+  TagInfo,
+} from "../src/models.js";
 
 const ENTRY_ID = "3fa85f64-5717-4562-b3fc-2c963f66afa6";
 const BASE_URL = "https://app.clarive.com/public/v1";
@@ -30,7 +36,36 @@ const ENTRY_RESPONSE: PromptEntry = {
       ],
     },
   ],
+  tags: ["test"],
+  updatedAt: "2026-03-18T10:00:00Z",
+  publishedAt: "2026-03-18T10:00:00Z",
 };
+
+const LIST_ENTRIES_RESPONSE: PaginatedResponse<EntrySummary> = {
+  items: [
+    {
+      id: ENTRY_ID,
+      title: "Test Entry",
+      version: 1,
+      hasSystemMessage: true,
+      isTemplate: true,
+      isChain: false,
+      promptCount: 1,
+      firstPromptPreview: "Hello {{name}}",
+      tags: ["test"],
+      createdAt: "2026-03-18T10:00:00Z",
+      updatedAt: "2026-03-18T10:00:00Z",
+    },
+  ],
+  totalCount: 1,
+  page: 1,
+  pageSize: 50,
+};
+
+const LIST_TAGS_RESPONSE: TagInfo[] = [
+  { name: "test", entryCount: 5 },
+  { name: "production", entryCount: 3 },
+];
 
 const GENERATE_RESPONSE: GenerateResponse = {
   id: ENTRY_ID,
@@ -153,6 +188,59 @@ describe("ClariveClient", () => {
         expect(e).toBeInstanceOf(ClariveValidationError);
         expect((e as ClariveValidationError).details).toEqual({ name: "Required" });
       }
+    });
+  });
+
+  describe("listEntries", () => {
+    it("sends GET to /entries and returns PaginatedResponse", async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse(LIST_ENTRIES_RESPONSE));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey", resilience: { enabled: false } });
+      const result = await client.listEntries();
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/entries`);
+      expect(init.method).toBe("GET");
+
+      expect(result.totalCount).toBe(1);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(50);
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].id).toBe(ENTRY_ID);
+      expect(result.items[0].title).toBe("Test Entry");
+      expect(result.items[0].hasSystemMessage).toBe(true);
+    });
+
+    it("passes query params to URL", async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse(LIST_ENTRIES_RESPONSE));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey", resilience: { enabled: false } });
+      await client.listEntries({ page: 2, search: "test" });
+
+      const [url] = fetchMock.mock.calls[0] as [string];
+      expect(url).toContain("page=2");
+      expect(url).toContain("search=test");
+    });
+  });
+
+  describe("listTags", () => {
+    it("sends GET to /tags and returns TagInfo array", async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse(LIST_TAGS_RESPONSE));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey", resilience: { enabled: false } });
+      const result = await client.listTags();
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/tags`);
+      expect(init.method).toBe("GET");
+
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe("test");
+      expect(result[0].entryCount).toBe(5);
+      expect(result[1].name).toBe("production");
+      expect(result[1].entryCount).toBe(3);
     });
   });
 
