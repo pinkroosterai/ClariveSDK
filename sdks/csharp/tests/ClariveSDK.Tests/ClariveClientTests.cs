@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using ClariveSDK.Exceptions;
 using ClariveSDK.Models;
 using ClariveSDK.Tests.Helpers;
 
@@ -127,7 +128,7 @@ public class ClariveClientTests
         var httpClient = new HttpClient(handler);
         var client = new ClariveClient(httpClient, CreateOptions());
 
-        await Assert.ThrowsAsync<HttpRequestException>(
+        await Assert.ThrowsAsync<ClariveApiException>(
             () => client.GetEntryAsync(TestEntryId));
     }
 }

@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using ClariveSDK.Exceptions;
 using ClariveSDK.Models;
 
 namespace ClariveSDK;
@@ -9,7 +10,7 @@ public class ClariveClient
     private readonly HttpClient _httpClient;
     private readonly ClariveOptions _options;
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    internal static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
@@ -38,7 +39,7 @@ public class ClariveClient
     public async Task<PromptEntry> GetEntryAsync(Guid entryId, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"entries/{entryId}", cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, cancellationToken);
 
         var entry = await response.Content.ReadFromJsonAsync<PromptEntry>(JsonOptions, cancellationToken);
         return entry ?? throw new InvalidOperationException("Response deserialized to null.");
@@ -49,9 +50,36 @@ public class ClariveClient
         ArgumentNullException.ThrowIfNull(request);
 
         var response = await _httpClient.PostAsJsonAsync($"entries/{entryId}/generate", request, JsonOptions, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        await EnsureSuccessAsync(response, cancellationToken);
 
         var result = await response.Content.ReadFromJsonAsync<GenerateResponse>(JsonOptions, cancellationToken);
         return result ?? throw new InvalidOperationException("Response deserialized to null.");
+    }
+
+    private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (response.IsSuccessStatusCode)
+            return;
+
+        var statusCode = (int)response.StatusCode;
+
+        try
+        {
+            var errorResponse = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions, cancellationToken);
+            if (errorResponse?.Error is { } error)
+            {
+                throw ClariveApiException.FromApiError(statusCode, error.Code, error.Message, error.Details);
+            }
+        }
+        catch (ClariveApiException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Body wasn't valid JSON or didn't match the error shape
+        }
+
+        throw new ClariveApiException("UNKNOWN", response.ReasonPhrase ?? "Unknown error", statusCode);
     }
 }
