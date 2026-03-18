@@ -32,6 +32,7 @@ public static class ClariveServiceCollectionExtensions
         ClariveOptions? prebuiltOptions = null)
     {
         services.AddTransient<ApiKeyDelegatingHandler>();
+        services.AddTransient<IClariveClient>(sp => sp.GetRequiredService<ClariveClient>());
 
         var builder = services
             .AddHttpClient<ClariveClient>((sp, client) =>
@@ -62,7 +63,7 @@ public static class ClariveServiceCollectionExtensions
 
                 pipelineBuilder.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions());
 
-                pipelineBuilder.AddTimeout(TimeSpan.FromSeconds(30));
+                pipelineBuilder.AddTimeout(opts.Timeout);
             });
         }
 

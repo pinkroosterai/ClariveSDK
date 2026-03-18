@@ -7,4 +7,6 @@ public class ResilienceOptions
     public int MaxRetries { get; set; } = 3;
 
     public TimeSpan RetryBaseDelay { get; set; } = TimeSpan.FromSeconds(1);
+
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
 }

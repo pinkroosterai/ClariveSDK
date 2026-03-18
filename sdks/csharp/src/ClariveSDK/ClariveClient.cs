@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace ClariveSDK;
 
-public class ClariveClient
+public class ClariveClient : IClariveClient
 {
     private readonly HttpClient _httpClient;
     private readonly ClariveOptions _options;
@@ -44,10 +44,10 @@ public class ClariveClient
 
     public async Task<PromptEntry> GetEntryAsync(Guid entryId, CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync($"entries/{entryId}", cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await _httpClient.GetAsync($"entries/{entryId}", cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
 
-        var entry = await response.Content.ReadFromJsonAsync<PromptEntry>(JsonOptions, cancellationToken);
+        var entry = await response.Content.ReadFromJsonAsync<PromptEntry>(JsonOptions, cancellationToken).ConfigureAwait(false);
         return entry ?? throw new InvalidOperationException("Response deserialized to null.");
     }
 
@@ -55,10 +55,10 @@ public class ClariveClient
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var response = await _httpClient.PostAsJsonAsync($"entries/{entryId}/generate", request, JsonOptions, cancellationToken);
-        await EnsureSuccessAsync(response, cancellationToken);
+        var response = await _httpClient.PostAsJsonAsync($"entries/{entryId}/generate", request, JsonOptions, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
 
-        var result = await response.Content.ReadFromJsonAsync<GenerateResponse>(JsonOptions, cancellationToken);
+        var result = await response.Content.ReadFromJsonAsync<GenerateResponse>(JsonOptions, cancellationToken).ConfigureAwait(false);
         return result ?? throw new InvalidOperationException("Response deserialized to null.");
     }
 
@@ -71,7 +71,7 @@ public class ClariveClient
 
         try
         {
-            var errorResponse = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions, cancellationToken);
+            var errorResponse = await response.Content.ReadFromJsonAsync<ApiErrorResponse>(JsonOptions, cancellationToken).ConfigureAwait(false);
             if (errorResponse?.Error is { } error)
             {
                 throw ClariveApiException.FromApiError(statusCode, error.Code, error.Message, error.Details);
@@ -81,7 +81,7 @@ public class ClariveClient
         {
             throw;
         }
-        catch
+        catch (JsonException)
         {
             // Body wasn't valid JSON or didn't match the error shape
         }

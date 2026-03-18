@@ -116,4 +116,22 @@ public class DependencyInjectionTests
         Assert.NotNull(capturedRequest);
         Assert.Equal("cl_existing_key", capturedRequest.Headers.GetValues("X-Api-Key").First());
     }
+
+    [Fact]
+    public void AddClarive_Registers_IClariveClient()
+    {
+        var services = new ServiceCollection();
+
+        services.AddClarive(opts =>
+        {
+            opts.ApiKey = TestApiKey;
+            opts.BaseUrl = TestBaseUrl;
+        });
+
+        var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IClariveClient>();
+
+        Assert.NotNull(client);
+        Assert.IsType<ClariveClient>(client);
+    }
 }

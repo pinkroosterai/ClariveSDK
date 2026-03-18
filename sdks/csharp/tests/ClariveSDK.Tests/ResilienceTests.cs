@@ -15,6 +15,7 @@ public class ResilienceTests
         Assert.True(options.Enabled);
         Assert.Equal(3, options.MaxRetries);
         Assert.Equal(TimeSpan.FromSeconds(1), options.RetryBaseDelay);
+        Assert.Equal(TimeSpan.FromSeconds(30), options.Timeout);
     }
 
     [Fact]
