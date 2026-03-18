@@ -6,8 +6,30 @@ using Polly;
 
 namespace ClariveSDK;
 
+/// <summary>
+/// Extension methods for registering the Clarive SDK with the dependency injection container.
+/// </summary>
 public static class ClariveServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers <see cref="ClariveClient"/> and <see cref="IClariveClient"/> with the DI container.
+    /// Configures the underlying <see cref="HttpClient"/>, API key handler, and optional resilience pipeline.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configure">A delegate to configure <see cref="ClariveOptions"/>.</param>
+    /// <returns>
+    /// An <see cref="IHttpClientBuilder"/> that can be used to chain additional configuration
+    /// such as custom delegating handlers or Polly policies.
+    /// </returns>
+    /// <example>
+    /// <code>
+    /// services.AddClarive(opts =>
+    /// {
+    ///     opts.ApiKey = "cl_your_key";
+    ///     opts.BaseUrl = "https://demo.clarive.app";
+    /// });
+    /// </code>
+    /// </example>
     public static IHttpClientBuilder AddClarive(
         this IServiceCollection services, Action<ClariveOptions> configure)
     {
@@ -15,6 +37,20 @@ public static class ClariveServiceCollectionExtensions
         return AddClariveCore(services, configure);
     }
 
+    /// <summary>
+    /// Registers <see cref="ClariveClient"/> and <see cref="IClariveClient"/> with the DI container,
+    /// binding options from an <see cref="IConfiguration"/> section (e.g. <c>"Clarive"</c> in appsettings.json).
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration section to bind <see cref="ClariveOptions"/> from.</param>
+    /// <returns>
+    /// An <see cref="IHttpClientBuilder"/> that can be used to chain additional configuration.
+    /// </returns>
+    /// <example>
+    /// <code>
+    /// services.AddClarive(builder.Configuration.GetSection("Clarive"));
+    /// </code>
+    /// </example>
     public static IHttpClientBuilder AddClarive(
         this IServiceCollection services, IConfiguration configuration)
     {

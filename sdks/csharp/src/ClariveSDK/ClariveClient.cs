@@ -7,6 +7,14 @@ using Microsoft.Extensions.Options;
 
 namespace ClariveSDK;
 
+/// <summary>
+/// HTTP client for the Clarive Public API. Provides methods to retrieve and render prompt entries.
+/// <para>
+/// For dependency injection, use <see cref="ClariveServiceCollectionExtensions.AddClarive(IServiceCollection, Action{ClariveOptions})"/>
+/// and inject <see cref="IClariveClient"/>. For standalone usage, construct directly with an <see cref="HttpClient"/>
+/// and <see cref="ClariveOptions"/>.
+/// </para>
+/// </summary>
 public class ClariveClient : IClariveClient
 {
     private readonly HttpClient _httpClient;
@@ -17,10 +25,25 @@ public class ClariveClient : IClariveClient
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    /// <summary>
+    /// Initializes a new instance for dependency injection. Prefer this constructor via <c>AddClarive()</c>.
+    /// </summary>
+    /// <param name="httpClient">The HTTP client provided by <see cref="IHttpClientFactory"/>.</param>
+    /// <param name="options">The SDK configuration from the DI container.</param>
     [ActivatorUtilitiesConstructor]
     public ClariveClient(HttpClient httpClient, IOptions<ClariveOptions> options)
         : this(httpClient, options?.Value ?? throw new ArgumentNullException(nameof(options))) { }
 
+    /// <summary>
+    /// Initializes a new instance for standalone usage without dependency injection.
+    /// </summary>
+    /// <param name="httpClient">
+    /// The HTTP client to use for requests. The caller owns the lifecycle of this client.
+    /// If <see cref="HttpClient.BaseAddress"/> is not set, it will be configured from <paramref name="options"/>.
+    /// </param>
+    /// <param name="options">The SDK configuration. Must pass validation.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="httpClient"/> or <paramref name="options"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="options"/> fails validation (missing API key or invalid base URL).</exception>
     public ClariveClient(HttpClient httpClient, ClariveOptions options)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -42,6 +65,7 @@ public class ClariveClient : IClariveClient
         }
     }
 
+    /// <inheritdoc />
     public async Task<PromptEntry> GetEntryAsync(Guid entryId, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.GetAsync($"entries/{entryId}", cancellationToken).ConfigureAwait(false);
@@ -51,6 +75,7 @@ public class ClariveClient : IClariveClient
         return entry ?? throw new InvalidOperationException("Response deserialized to null.");
     }
 
+    /// <inheritdoc />
     public async Task<GenerateResponse> GenerateAsync(Guid entryId, GenerateRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
