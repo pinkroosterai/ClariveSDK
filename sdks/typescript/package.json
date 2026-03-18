@@ -1,6 +1,6 @@
 {
   "name": "clarive-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Official TypeScript SDK for the Clarive Public API",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -19,6 +19,15 @@
     }
   },
   "files": ["dist"],
+  "author": "Clarive",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pinkroosterai/ClariveSDK.git",
+    "directory": "sdks/typescript"
+  },
+  "homepage": "https://github.com/pinkroosterai/ClariveSDK/tree/main/sdks/typescript",
+  "keywords": ["clarive", "sdk", "prompt", "api", "typescript"],
   "scripts": {
     "build": "tsup",
     "test": "vitest run",

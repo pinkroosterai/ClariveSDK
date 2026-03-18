@@ -1,5 +1,7 @@
 # clarive-sdk
 
+[![npm](https://img.shields.io/npm/v/clarive-sdk)](https://www.npmjs.com/package/clarive-sdk)
+
 The official TypeScript SDK for the [Clarive](https://clarive.com) Public API. Fetch prompt entries, render templates with variable substitution, and let the built-in retry and circuit breaker handle the rest.
 
 **Node 18+**, strict TypeScript, zero runtime dependencies. Ships ESM and CJS.

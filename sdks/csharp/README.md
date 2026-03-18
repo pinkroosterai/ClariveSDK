@@ -1,5 +1,7 @@
 # ClariveSDK for .NET
 
+[![NuGet](https://img.shields.io/nuget/v/ClariveSDK)](https://www.nuget.org/packages/ClariveSDK)
+
 The official C# SDK for the [Clarive](https://clarive.com) Public API. Retrieve prompt entries, render templates with variable substitution, and integrate it all into your .NET apps with a single `AddClarive()` call.
 
 Targets **.NET 9+**. No dependencies beyond `Microsoft.Extensions.Http` and `Microsoft.Extensions.Http.Resilience`.

@@ -1,5 +1,7 @@
 # clarive-sdk
 
+[![PyPI](https://img.shields.io/pypi/v/clarive-sdk)](https://pypi.org/project/clarive-sdk/)
+
 The official Python SDK for the [Clarive](https://clarive.com) Public API. Fetch prompt entries, render templates with variable substitution, and let the built-in retry and circuit breaker handle the rest.
 
 Requires **Python 3.10+**. Two runtime dependencies: `httpx` and `tenacity`.
