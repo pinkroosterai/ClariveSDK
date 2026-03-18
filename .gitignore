@@ -26,3 +26,4 @@ sdks/typescript/pnpm-lock.yaml
 # OS
 .DS_Store
 Thumbs.db
+sdks/python/uv.lock
