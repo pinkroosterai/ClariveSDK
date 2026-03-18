@@ -10,12 +10,19 @@ __pycache__/
 *.egg-info/
 dist/
 .venv/
+.coverage
+.pytest_cache/
 
 # TypeScript
 sdks/typescript/node_modules/
 sdks/typescript/dist/
+sdks/typescript/pnpm-lock.yaml
 
 # IDE
 .idea/
 .vscode/
 *.swp
+
+# OS
+.DS_Store
+Thumbs.db
