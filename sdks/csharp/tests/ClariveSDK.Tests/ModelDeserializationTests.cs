@@ -26,6 +26,8 @@ public class ModelDeserializationTests
               "isTemplate": true,
               "templateFields": [
                 {
+                  "id": "00000000-0000-0000-0000-000000000001",
+                  "promptId": "00000000-0000-0000-0000-000000000002",
                   "name": "customerMessage",
                   "type": "string",
                   "enumValues": null,
@@ -108,6 +110,8 @@ public class ModelDeserializationTests
     {
         var json = """
         {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "promptId": "00000000-0000-0000-0000-000000000002",
           "name": "color",
           "type": "enum",
           "enumValues": ["red", "green", "blue"],
@@ -132,6 +136,8 @@ public class ModelDeserializationTests
     {
         var json = """
         {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "promptId": "00000000-0000-0000-0000-000000000002",
           "name": "temperature",
           "type": "float",
           "enumValues": null,
