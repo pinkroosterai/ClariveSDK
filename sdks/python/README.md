@@ -119,6 +119,8 @@ except ClariveCircuitOpenError:
 |--------|---------|-------------|
 | `get_entry(entry_id: UUID)` | `PromptEntry` | Fetches the published version of a prompt entry |
 | `generate(entry_id: UUID, request: GenerateRequest)` | `GenerateResponse` | Renders prompts with template variable substitution |
+| `list_entries(options?: ListEntriesOptions)` | `PaginatedResponse` | Lists published entries with filtering, search, and pagination |
+| `list_tags()` | `list[TagInfo]` | Lists all tags with entry counts |
 
 ### Models
 
@@ -126,7 +128,7 @@ All response models are frozen dataclasses. They're immutable once created.
 
 **`PromptEntry`** — a published prompt entry.
 
-- `id` (UUID), `title` (str), `version` (int), `system_message` (str | None), `prompts` (list[Prompt])
+- `id` (UUID), `title` (str), `version` (int), `system_message` (str | None), `prompts` (list[Prompt]), `tags` (list[str]), `updated_at` (datetime), `published_at` (datetime | None)
 
 **`Prompt`** — a single prompt within an entry.
 
@@ -134,7 +136,7 @@ All response models are frozen dataclasses. They're immutable once created.
 
 **`TemplateField`** — a `{{variable}}` placeholder definition.
 
-- `name`, `type` (string/int/float/enum), `enum_values`, `default_value`, `min`, `max`
+- `id` (UUID), `prompt_id` (UUID), `name`, `type` (string/int/float/enum), `enum_values`, `default_value`, `min`, `max`
 
 **`GenerateRequest`** — request body for `generate()`.
 
@@ -147,6 +149,22 @@ All response models are frozen dataclasses. They're immutable once created.
 **`RenderedPrompt`** — a prompt with variables replaced.
 
 - `content` (str), `order` (int)
+
+**`EntrySummary`** — compact entry representation from `list_entries()`.
+
+- `id`, `title`, `version`, `has_system_message`, `is_template`, `is_chain`, `prompt_count`, `first_prompt_preview`, `tags`, `created_at`, `updated_at`
+
+**`PaginatedResponse`** — pagination wrapper.
+
+- `items` (list), `total_count` (int), `page` (int), `page_size` (int)
+
+**`TagInfo`** — a tag with its entry count.
+
+- `name` (str), `entry_count` (int)
+
+**`ListEntriesOptions`** — query parameters for `list_entries()`.
+
+- `folder_id`, `tags`, `tag_mode`, `page`, `page_size`, `search`, `sort_by` (all optional)
 
 ## Configuration
 

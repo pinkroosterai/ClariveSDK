@@ -1,6 +1,7 @@
 """Example usage of the Clarive Python SDK.
 
-Demonstrates both async and sync client usage.
+Demonstrates both async and sync client usage, including
+list entries, list tags, get entry, and generate.
 """
 
 import asyncio
@@ -10,11 +11,8 @@ from clarive import (
     ClariveClient,
     ClariveClientSync,
     GenerateRequest,
+    ListEntriesOptions,
 )
-
-
-# Replace with a real entry ID from your Clarive instance
-ENTRY_ID = UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
 
 
 async def async_example() -> None:
@@ -25,15 +23,41 @@ async def async_example() -> None:
         api_key="cl_your_api_key_here",
         base_url="https://demo.clarive.app",
     ) as client:
-        # Retrieve a published prompt entry
-        entry = await client.get_entry(ENTRY_ID)
+        # List published entries with filtering and pagination
+        print("\n--- List Entries ---")
+        entries = await client.list_entries(ListEntriesOptions(page_size=5, sort_by="recent"))
+        print(f"Total: {entries.total_count} (page {entries.page}, {len(entries.items)} shown)")
+        for summary in entries.items:
+            tags = ", ".join(summary.tags) if summary.tags else "none"
+            print(
+                f"  {summary.title} (v{summary.version})"
+                f" — {summary.prompt_count} prompt(s), tags: [{tags}]"
+            )
+
+        # List all tags
+        print("\n--- List Tags ---")
+        tags_list = await client.list_tags()
+        for tag in tags_list:
+            print(f"  {tag.name}: {tag.entry_count} entries")
+
+        # Get a single entry (use first from list, or a known ID)
+        entry_id = (
+            entries.items[0].id if entries.items else UUID("3fa85f64-5717-4562-b3fc-2c963f66afa6")
+        )
+
+        print("\n--- Get Entry ---")
+        entry = await client.get_entry(entry_id)
         print(f"Title: {entry.title}")
         print(f"Version: {entry.version}")
         print(f"System Message: {entry.system_message or '(none)'}")
+        print(f"Tags: [{', '.join(entry.tags)}]")
+        print(f"Updated: {entry.updated_at}")
+        print(f"Published: {entry.published_at or '(not published)'}")
         print(f"Prompts: {len(entry.prompts)}")
 
         for prompt in entry.prompts:
-            print(f"\n  Prompt #{prompt.order}: {'[template]' if prompt.is_template else '[static]'}")
+            label = "[template]" if prompt.is_template else "[static]"
+            print(f"\n  Prompt #{prompt.order}: {label}")
             print(f"  Content: {prompt.content[:80]}...")
 
             if prompt.template_fields:
@@ -41,14 +65,14 @@ async def async_example() -> None:
                     print(f"    Field: {field.name} ({field.type})")
 
         # Generate rendered prompts with template variable values
-        print("\n=== Generate ===")
+        print("\n--- Generate ---")
         request = GenerateRequest(
             fields={
                 "companyName": "Acme Corp",
                 "customerMessage": "I need help with my order #12345",
             }
         )
-        result = await client.generate(ENTRY_ID, request)
+        result = await client.generate(entry_id, request)
         print(f"Title: {result.title}")
         print(f"System Message: {result.system_message or '(none)'}")
 
@@ -59,23 +83,33 @@ async def async_example() -> None:
 
 def sync_example() -> None:
     """Sync client usage with 'with' context manager."""
-    print("\n=== Sync Client ===")
+    print("\n\n=== Sync Client ===")
 
     with ClariveClientSync(
         api_key="cl_your_api_key_here",
         base_url="https://demo.clarive.app",
     ) as client:
-        entry = client.get_entry(ENTRY_ID)
-        print(f"Title: {entry.title}")
-        print(f"Version: {entry.version}")
-        print(f"Prompts: {len(entry.prompts)}")
+        # List entries
+        entries = client.list_entries(ListEntriesOptions(page_size=3))
+        print(f"Total: {entries.total_count} entries")
+        for s in entries.items:
+            print(f"  {s.title} (v{s.version})")
 
-        result = client.generate(
-            ENTRY_ID,
-            GenerateRequest(fields={"companyName": "Acme Corp"}),
-        )
-        for rendered in result.rendered_prompts:
-            print(f"  Rendered: {rendered.content}")
+        # List tags
+        tags = client.list_tags()
+        print(f"Tags: {', '.join(t.name for t in tags)}")
+
+        # Get + generate
+        if entries.items:
+            entry = client.get_entry(entries.items[0].id)
+            print(f"\nEntry: {entry.title}, tags: [{', '.join(entry.tags)}]")
+
+            result = client.generate(
+                entry.id,
+                GenerateRequest(fields={"companyName": "Acme Corp"}),
+            )
+            for rendered in result.rendered_prompts:
+                print(f"  Rendered: {rendered.content[:80]}...")
 
 
 if __name__ == "__main__":

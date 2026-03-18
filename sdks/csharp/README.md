@@ -159,12 +159,14 @@ catch (ClariveApiException ex)
 |--------|---------|-------------|
 | `GetEntryAsync(Guid entryId, CancellationToken)` | `PromptEntry` | Fetches the published version of a prompt entry |
 | `GenerateAsync(Guid entryId, GenerateRequest, CancellationToken)` | `GenerateResponse` | Renders prompts with template variable substitution |
+| `ListEntriesAsync(ListEntriesOptions?, CancellationToken)` | `PaginatedResponse<EntrySummary>` | Lists published entries with filtering, search, and pagination |
+| `ListTagsAsync(CancellationToken)` | `IReadOnlyList<TagInfo>` | Lists all tags with entry counts |
 
 ### Models
 
 **`PromptEntry`** — a published prompt entry containing one or more prompts.
 
-- `Id` (Guid), `Title` (string), `Version` (int), `SystemMessage` (string?), `Prompts` (list of `Prompt`)
+- `Id` (Guid), `Title` (string), `Version` (int), `SystemMessage` (string?), `Prompts` (list of `Prompt`), `Tags` (list of string), `UpdatedAt` (DateTime), `PublishedAt` (DateTime?)
 
 **`Prompt`** — a single prompt within an entry.
 
@@ -172,7 +174,7 @@ catch (ClariveApiException ex)
 
 **`TemplateField`** — defines a `{{variable}}` placeholder in a template prompt.
 
-- `Name`, `Type` (string/int/float/enum), `EnumValues`, `DefaultValue`, `Min`, `Max`
+- `Id` (Guid), `PromptId` (Guid), `Name`, `Type` (string/int/float/enum), `EnumValues`, `DefaultValue`, `Min`, `Max`
 
 **`GenerateRequest`** — the request body for `GenerateAsync`.
 
@@ -185,6 +187,22 @@ catch (ClariveApiException ex)
 **`RenderedPrompt`** — a prompt with all template variables replaced.
 
 - `Content` (string), `Order` (int)
+
+**`EntrySummary`** — compact entry representation from `ListEntriesAsync`.
+
+- `Id`, `Title`, `Version`, `HasSystemMessage`, `IsTemplate`, `IsChain`, `PromptCount`, `FirstPromptPreview`, `Tags`, `CreatedAt`, `UpdatedAt`
+
+**`PaginatedResponse<T>`** — pagination wrapper.
+
+- `Items` (list of T), `TotalCount` (int), `Page` (int), `PageSize` (int)
+
+**`TagInfo`** — a tag with its entry count.
+
+- `Name` (string), `EntryCount` (int)
+
+**`ListEntriesOptions`** — query parameters for `ListEntriesAsync`.
+
+- `FolderId`, `Tags`, `TagMode`, `Page`, `PageSize`, `Search`, `SortBy` (all optional)
 
 ## Configuration
 

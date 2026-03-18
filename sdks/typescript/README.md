@@ -112,6 +112,8 @@ try {
 |--------|---------|-------------|
 | `getEntry(entryId: string)` | `Promise<PromptEntry>` | Fetches the published version of a prompt entry |
 | `generate(entryId: string, request: GenerateRequest)` | `Promise<GenerateResponse>` | Renders prompts with template variable substitution |
+| `listEntries(options?: ListEntriesOptions)` | `Promise<PaginatedResponse<EntrySummary>>` | Lists published entries with filtering, search, and pagination |
+| `listTags()` | `Promise<TagInfo[]>` | Lists all tags with entry counts |
 
 ### Models
 
@@ -119,7 +121,7 @@ All models are TypeScript interfaces with full IntelliSense support.
 
 **`PromptEntry`** — a published prompt entry.
 
-- `id` (string), `title` (string), `version` (number), `systemMessage` (string | null), `prompts` (Prompt[])
+- `id` (string), `title` (string), `version` (number), `systemMessage` (string | null), `prompts` (Prompt[]), `tags` (string[]), `updatedAt` (string), `publishedAt` (string | null)
 
 **`Prompt`** — a single prompt within an entry.
 
@@ -127,7 +129,7 @@ All models are TypeScript interfaces with full IntelliSense support.
 
 **`TemplateField`** — a `{{variable}}` placeholder definition.
 
-- `name`, `type` (string/int/float/enum), `enumValues`, `defaultValue`, `min`, `max`
+- `id`, `promptId`, `name`, `type` (string/int/float/enum), `enumValues`, `defaultValue`, `min`, `max`
 
 **`GenerateRequest`** — request body for `generate()`.
 
@@ -140,6 +142,22 @@ All models are TypeScript interfaces with full IntelliSense support.
 **`RenderedPrompt`** — a prompt with variables replaced.
 
 - `content` (string), `order` (number)
+
+**`EntrySummary`** — compact entry representation from `listEntries()`.
+
+- `id`, `title`, `version`, `hasSystemMessage`, `isTemplate`, `isChain`, `promptCount`, `firstPromptPreview`, `tags`, `createdAt`, `updatedAt`
+
+**`PaginatedResponse<T>`** — pagination wrapper.
+
+- `items` (T[]), `totalCount` (number), `page` (number), `pageSize` (number)
+
+**`TagInfo`** — a tag with its entry count.
+
+- `name` (string), `entryCount` (number)
+
+**`ListEntriesOptions`** — query parameters for `listEntries()`.
+
+- `folderId?`, `tags?`, `tagMode?`, `page?`, `pageSize?`, `search?`, `sortBy?`
 
 ## Configuration
 
