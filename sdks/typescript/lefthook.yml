@@ -1,0 +1,7 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome-check:
+      run: pnpm biome check src/ tests/
+    typecheck:
+      run: pnpm tsc --noEmit
