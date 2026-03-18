@@ -2,6 +2,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using ClariveSDK.Exceptions;
 using ClariveSDK.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace ClariveSDK;
 
@@ -14,6 +16,10 @@ public class ClariveClient
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
+
+    [ActivatorUtilitiesConstructor]
+    public ClariveClient(HttpClient httpClient, IOptions<ClariveOptions> options)
+        : this(httpClient, options?.Value ?? throw new ArgumentNullException(nameof(options))) { }
 
     public ClariveClient(HttpClient httpClient, ClariveOptions options)
     {
