@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>ClariveSDK</RootNamespace>
     <PackageId>ClariveSDK</PackageId>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <Authors>Clarive</Authors>
     <Description>Official C# SDK for the Clarive Public API</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
