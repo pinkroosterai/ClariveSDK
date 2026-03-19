@@ -1,5 +1,5 @@
-import { ClariveClient } from "../src/index.js";
-import type { GenerateRequest } from "../src/index.js";
+import { ClariveClient } from "clarive-sdk";
+import type { GenerateRequest } from "clarive-sdk";
 
 const client = new ClariveClient({
   apiKey: "cl_your_api_key_here",
