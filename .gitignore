@@ -27,3 +27,4 @@ sdks/typescript/pnpm-lock.yaml
 .DS_Store
 Thumbs.db
 sdks/python/uv.lock
+.serena/

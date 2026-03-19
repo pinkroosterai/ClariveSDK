@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 
@@ -174,17 +175,22 @@ class EntrySummary:
         )
 
 
-@dataclass(frozen=True, slots=True)
-class PaginatedResponse:
+T = TypeVar("T")
+
+
+@dataclass(frozen=True)
+class PaginatedResponse(Generic[T]):
     """Paginated response wrapper from list endpoints."""
 
-    items: list[Any]
+    items: list[T]
     total_count: int
     page: int
     page_size: int
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any], item_factory: Any) -> PaginatedResponse:
+    def from_dict(
+        cls, data: dict[str, Any], item_factory: Callable[[dict[str, Any]], T]
+    ) -> PaginatedResponse[T]:
         return cls(
             items=[item_factory(item) for item in data["items"]],
             total_count=int(data["totalCount"]),

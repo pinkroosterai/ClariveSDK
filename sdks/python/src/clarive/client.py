@@ -30,21 +30,23 @@ def _build_list_entries_query(options: ListEntriesOptions | None) -> str:
     """Build query string from ListEntriesOptions."""
     if options is None:
         return ""
+    from urllib.parse import quote
+
     parts: list[str] = []
     if options.folder_id is not None:
-        parts.append(f"folderId={options.folder_id}")
+        parts.append(f"folderId={quote(options.folder_id, safe='')}")
     if options.tags is not None:
-        parts.append(f"tags={options.tags}")
+        parts.append(f"tags={quote(options.tags, safe='')}")
     if options.tag_mode is not None:
-        parts.append(f"tagMode={options.tag_mode}")
+        parts.append(f"tagMode={quote(options.tag_mode, safe='')}")
     if options.page is not None:
         parts.append(f"page={options.page}")
     if options.page_size is not None:
         parts.append(f"pageSize={options.page_size}")
     if options.search is not None:
-        parts.append(f"search={options.search}")
+        parts.append(f"search={quote(options.search, safe='')}")
     if options.sort_by is not None:
-        parts.append(f"sortBy={options.sort_by}")
+        parts.append(f"sortBy={quote(options.sort_by, safe='')}")
     return "&".join(parts)
 
 
@@ -244,7 +246,9 @@ class ClariveClient(_BaseClariveClient):
         data: dict[str, object] = response.json()
         return GenerateResponse.from_dict(data)
 
-    async def list_entries(self, options: ListEntriesOptions | None = None) -> PaginatedResponse:
+    async def list_entries(
+        self, options: ListEntriesOptions | None = None
+    ) -> PaginatedResponse[EntrySummary]:
         """List published prompt entries with optional filtering and pagination."""
         query = _build_list_entries_query(options)
         url = f"entries?{query}" if query else "entries"
@@ -380,7 +384,9 @@ class ClariveClientSync(_BaseClariveClient):
         data: dict[str, object] = response.json()
         return GenerateResponse.from_dict(data)
 
-    def list_entries(self, options: ListEntriesOptions | None = None) -> PaginatedResponse:
+    def list_entries(
+        self, options: ListEntriesOptions | None = None
+    ) -> PaginatedResponse[EntrySummary]:
         """List published prompt entries with optional filtering and pagination."""
         query = _build_list_entries_query(options)
         url = f"entries?{query}" if query else "entries"
