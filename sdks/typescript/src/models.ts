@@ -16,6 +16,13 @@ export interface Prompt {
   templateFields: TemplateField[] | null;
 }
 
+export interface TabSummary {
+  id: string;
+  name: string;
+  isMainTab: boolean;
+  forkedFromVersion: number | null;
+}
+
 export interface PromptEntry {
   id: string;
   title: string;
@@ -25,6 +32,8 @@ export interface PromptEntry {
   tags: string[];
   updatedAt: string;
   publishedAt: string | null;
+  tabs: TabSummary[];
+  tabCount: number;
 }
 
 export interface GenerateRequest {
@@ -56,6 +65,8 @@ export interface EntrySummary {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  tabs: TabSummary[];
+  tabCount: number;
 }
 
 export interface PaginatedResponse<T> {

@@ -1,6 +1,6 @@
 # ClariveSDK
 
-Official SDKs for the [Clarive](https://github.com/pinkroosterai/Clarive) Public API. Three languages, four endpoints: list and search entries, fetch a single entry, render it with your variables, and browse tags. Each SDK handles typed errors, retries, and circuit breaking out of the box.
+Official SDKs for the [Clarive](https://github.com/pinkroosterai/Clarive) Public API. Three languages, seven endpoints: list and search entries, fetch a single entry, render it with your variables, browse tags, and work with tabs. Each SDK handles typed errors, retries, and circuit breaking out of the box.
 
 | Language | Package | Install | Runtime |
 |----------|---------|---------|---------|
@@ -30,13 +30,16 @@ const entry = await client.getEntry(entryId);
 
 ## API
 
-Four endpoints, all behind an `X-Api-Key` header. Full spec in [CLARIVE_PUBLIC_API.md](CLARIVE_PUBLIC_API.md).
+Seven endpoints, all behind an `X-Api-Key` header. Full spec in [CLARIVE_PUBLIC_API.md](CLARIVE_PUBLIC_API.md).
 
 | Method | Endpoint | What it does |
 |--------|----------|-------------|
 | `GET` | `/public/v1/entries` | List published entries with filtering, search, and pagination |
 | `GET` | `/public/v1/entries/{entryId}` | Retrieve a published prompt entry |
 | `POST` | `/public/v1/entries/{entryId}/generate` | Render it with template variables |
+| `GET` | `/public/v1/entries/{entryId}/tabs` | List tabs for an entry |
+| `GET` | `/public/v1/entries/{entryId}/tabs/{tabId}` | Retrieve a specific tab |
+| `POST` | `/public/v1/entries/{entryId}/tabs/{tabId}/generate` | Render a tab with template variables |
 | `GET` | `/public/v1/tags` | List all tags with entry counts |
 
 ## What the SDKs give you
@@ -53,7 +56,7 @@ Every SDK is written to feel native in its language. They share principles, not 
 
 ```bash
 make build    # All three SDKs
-make test     # All test suites (144 tests across C#, Python, TypeScript)
+make test     # All test suites (160 tests across C#, Python, TypeScript)
 make clean    # Remove build artifacts
 ```
 

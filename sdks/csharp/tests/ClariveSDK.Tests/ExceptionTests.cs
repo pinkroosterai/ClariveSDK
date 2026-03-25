@@ -46,6 +46,16 @@ public class ExceptionTests
     }
 
     [Fact]
+    public void FromApiError_Returns_ClariveNotFoundException_For_TabNotFound()
+    {
+        var ex = ClariveApiException.FromApiError(404, "TAB_NOT_FOUND", "Tab not found.");
+
+        Assert.IsType<ClariveNotFoundException>(ex);
+        Assert.Equal("NOT_FOUND", ex.ErrorCode);
+        Assert.Equal(404, ex.HttpStatusCode);
+    }
+
+    [Fact]
     public void FromApiError_Returns_ClariveValidationException_With_Details()
     {
         var details = new Dictionary<string, string>

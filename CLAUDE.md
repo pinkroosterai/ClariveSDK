@@ -15,10 +15,15 @@ Each SDK has `src/`, `tests/`, and `example/` directories.
 
 ## API Reference
 
-The full Clarive Public API specification lives in `CLARIVE_PUBLIC_API.md` at the repo root. All SDKs wrap these two endpoints:
+The full Clarive Public API specification lives in `CLARIVE_PUBLIC_API.md` at the repo root. All SDKs wrap these endpoints:
 
+- `GET /public/v1/entries` — list published entries with filtering, search, and pagination
 - `GET /public/v1/entries/{entryId}` — retrieve a published prompt entry
 - `POST /public/v1/entries/{entryId}/generate` — render a prompt with template variable substitution
+- `GET /public/v1/entries/{entryId}/tabs` — list tabs for an entry
+- `GET /public/v1/entries/{entryId}/tabs/{tabId}` — retrieve a specific tab
+- `POST /public/v1/entries/{entryId}/tabs/{tabId}/generate` — render a tab with template variables
+- `GET /public/v1/tags` — list all tags with entry counts
 
 Auth is via `X-Api-Key` header. Responses use camelCase JSON.
 

@@ -14,6 +14,8 @@ namespace ClariveSDK.Models;
 /// <param name="Tags">Tags assigned to the entry.</param>
 /// <param name="CreatedAt">When the entry was created.</param>
 /// <param name="UpdatedAt">When the entry was last updated.</param>
+/// <param name="Tabs">Tab summaries for this entry.</param>
+/// <param name="TabCount">The number of tabs on this entry.</param>
 public record EntrySummary(
     Guid Id,
     string Title,
@@ -25,4 +27,6 @@ public record EntrySummary(
     string? FirstPromptPreview,
     IReadOnlyList<string> Tags,
     DateTime CreatedAt,
-    DateTime UpdatedAt);
+    DateTime UpdatedAt,
+    IReadOnlyList<TabSummary> Tabs,
+    int TabCount);

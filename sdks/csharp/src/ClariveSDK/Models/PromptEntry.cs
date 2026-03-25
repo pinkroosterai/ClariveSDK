@@ -11,6 +11,8 @@ namespace ClariveSDK.Models;
 /// <param name="Tags">Tags assigned to the entry.</param>
 /// <param name="UpdatedAt">When the entry was last updated.</param>
 /// <param name="PublishedAt">When the current version was published.</param>
+/// <param name="Tabs">Tab summaries for this entry.</param>
+/// <param name="TabCount">The number of tabs on this entry.</param>
 public record PromptEntry(
     Guid Id,
     string Title,
@@ -19,4 +21,6 @@ public record PromptEntry(
     IReadOnlyList<Prompt> Prompts,
     IReadOnlyList<string> Tags,
     DateTime UpdatedAt,
-    DateTime? PublishedAt);
+    DateTime? PublishedAt,
+    IReadOnlyList<TabSummary> Tabs,
+    int TabCount);

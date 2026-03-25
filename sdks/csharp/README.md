@@ -127,7 +127,7 @@ API errors throw typed exceptions, all extending `ClariveApiException`:
 | `ClariveAuthenticationException` | 401 | Invalid or missing API key |
 | `ClariveNotFoundException` | 404 | Entry doesn't exist or is trashed |
 | `ClariveValidationException` | 422 | Bad template field values |
-| `ClariveRateLimitException` | 429 | Too many requests (limit: 20/min) |
+| `ClariveRateLimitException` | 429 | Too many requests (limit: 600/min) |
 
 `ClariveValidationException` carries a `Details` dictionary mapping field names to error messages, so you can tell the user exactly what went wrong.
 
@@ -161,12 +161,15 @@ catch (ClariveApiException ex)
 | `GenerateAsync(Guid entryId, GenerateRequest, CancellationToken)` | `GenerateResponse` | Renders prompts with template variable substitution |
 | `ListEntriesAsync(ListEntriesOptions?, CancellationToken)` | `PaginatedResponse<EntrySummary>` | Lists published entries with filtering, search, and pagination |
 | `ListTagsAsync(CancellationToken)` | `IReadOnlyList<TagInfo>` | Lists all tags with entry counts |
+| `ListTabsAsync(Guid entryId, CancellationToken)` | `IReadOnlyList<TabSummary>` | Lists tabs for an entry |
+| `GetTabAsync(Guid entryId, Guid tabId, CancellationToken)` | `PromptEntry` | Retrieves a specific tab |
+| `GenerateTabAsync(Guid entryId, Guid tabId, GenerateRequest, CancellationToken)` | `GenerateResponse` | Renders a tab with template variable substitution |
 
 ### Models
 
 **`PromptEntry`** — a published prompt entry containing one or more prompts.
 
-- `Id` (Guid), `Title` (string), `Version` (int), `SystemMessage` (string?), `Prompts` (list of `Prompt`), `Tags` (list of string), `UpdatedAt` (DateTime), `PublishedAt` (DateTime?)
+- `Id` (Guid), `Title` (string), `Version` (int), `SystemMessage` (string?), `Prompts` (list of `Prompt`), `Tags` (list of string), `UpdatedAt` (DateTime), `PublishedAt` (DateTime?), `Tabs` (list of `TabSummary`), `TabCount` (int)
 
 **`Prompt`** — a single prompt within an entry.
 
@@ -190,7 +193,11 @@ catch (ClariveApiException ex)
 
 **`EntrySummary`** — compact entry representation from `ListEntriesAsync`.
 
-- `Id`, `Title`, `Version`, `HasSystemMessage`, `IsTemplate`, `IsChain`, `PromptCount`, `FirstPromptPreview`, `Tags`, `CreatedAt`, `UpdatedAt`
+- `Id`, `Title`, `Version`, `HasSystemMessage`, `IsTemplate`, `IsChain`, `PromptCount`, `FirstPromptPreview`, `Tags`, `CreatedAt`, `UpdatedAt`, `Tabs` (list of `TabSummary`), `TabCount` (int)
+
+**`TabSummary`** — summary of a tab on a prompt entry.
+
+- `Id` (Guid), `Name` (string), `IsMainTab` (bool), `ForkedFromVersion` (int?)
 
 **`PaginatedResponse<T>`** — pagination wrapper.
 

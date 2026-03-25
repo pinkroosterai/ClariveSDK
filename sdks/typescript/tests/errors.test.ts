@@ -39,6 +39,12 @@ describe("fromResponse", () => {
     expect(err.statusCode).toBe(404);
   });
 
+  it("returns ClariveNotFoundError for TAB_NOT_FOUND", () => {
+    const err = ClariveApiError.fromResponse(404, "TAB_NOT_FOUND", "Tab not found.");
+    expect(err).toBeInstanceOf(ClariveNotFoundError);
+    expect(err.statusCode).toBe(404);
+  });
+
   it("returns ClariveValidationError with details for VALIDATION_ERROR", () => {
     const details = { age: "Must be integer" };
     const err = ClariveApiError.fromResponse(422, "VALIDATION_ERROR", "Failed", details);

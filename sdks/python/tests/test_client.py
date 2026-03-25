@@ -15,6 +15,7 @@ from clarive.models import (
     GenerateRequest,
     ListEntriesOptions,
     PaginatedResponse,
+    TabSummary,
     TagInfo,
 )
 
@@ -48,6 +49,15 @@ ENTRY_RESPONSE = {
     "tags": ["test"],
     "updatedAt": "2026-03-18T10:00:00Z",
     "publishedAt": "2026-03-18T10:00:00Z",
+    "tabs": [
+        {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "name": "Main",
+            "isMainTab": True,
+            "forkedFromVersion": None,
+        }
+    ],
+    "tabCount": 1,
 }
 
 LIST_ENTRIES_RESPONSE = {
@@ -64,6 +74,8 @@ LIST_ENTRIES_RESPONSE = {
             "tags": ["test"],
             "createdAt": "2026-03-18T10:00:00Z",
             "updatedAt": "2026-03-18T10:00:00Z",
+            "tabs": [],
+            "tabCount": 0,
         }
     ],
     "totalCount": 1,
@@ -252,3 +264,84 @@ class TestClariveClientListTags:
         assert result[0].entry_count == 5
         assert result[1].name == "production"
         assert result[1].entry_count == 3
+
+
+TAB_ID = UUID("00000000-0000-0000-0000-000000000010")
+
+LIST_TABS_RESPONSE = [
+    {
+        "id": "00000000-0000-0000-0000-000000000010",
+        "name": "Main",
+        "isMainTab": True,
+        "forkedFromVersion": None,
+    },
+    {
+        "id": "00000000-0000-0000-0000-000000000011",
+        "name": "Formal",
+        "isMainTab": False,
+        "forkedFromVersion": 3,
+    },
+]
+
+
+@pytest.mark.asyncio
+class TestClariveClientListTabs:
+    @respx.mock
+    async def test_list_tabs_returns_tab_list(self) -> None:
+        route = respx.get(f"{BASE_URL}entries/{ENTRY_ID}/tabs").mock(
+            return_value=httpx.Response(200, json=LIST_TABS_RESPONSE)
+        )
+
+        async with ClariveClient(api_key="cl_testkey") as client:
+            result = await client.list_tabs(ENTRY_ID)
+
+        assert route.called
+        assert len(result) == 2
+        assert all(isinstance(t, TabSummary) for t in result)
+        assert result[0].name == "Main"
+        assert result[0].is_main_tab is True
+        assert result[1].name == "Formal"
+        assert result[1].forked_from_version == 3
+
+
+@pytest.mark.asyncio
+class TestClariveClientGetTab:
+    @respx.mock
+    async def test_get_tab_returns_prompt_entry(self) -> None:
+        route = respx.get(f"{BASE_URL}entries/{ENTRY_ID}/tabs/{TAB_ID}").mock(
+            return_value=httpx.Response(200, json=ENTRY_RESPONSE)
+        )
+
+        async with ClariveClient(api_key="cl_testkey") as client:
+            entry = await client.get_tab(ENTRY_ID, TAB_ID)
+
+        assert route.called
+        assert entry.id == ENTRY_ID
+        assert entry.title == "Test Entry"
+
+    @respx.mock
+    async def test_get_tab_raises_on_404(self) -> None:
+        error_body = {"error": {"code": "TAB_NOT_FOUND", "message": "Tab not found."}}
+        respx.get(f"{BASE_URL}entries/{ENTRY_ID}/tabs/{TAB_ID}").mock(
+            return_value=httpx.Response(404, json=error_body)
+        )
+
+        async with ClariveClient(api_key="cl_testkey") as client:
+            with pytest.raises(ClariveNotFoundError):
+                await client.get_tab(ENTRY_ID, TAB_ID)
+
+
+@pytest.mark.asyncio
+class TestClariveClientGenerateTab:
+    @respx.mock
+    async def test_generate_tab_sends_post(self) -> None:
+        route = respx.post(f"{BASE_URL}entries/{ENTRY_ID}/tabs/{TAB_ID}/generate").mock(
+            return_value=httpx.Response(200, json=GENERATE_RESPONSE)
+        )
+
+        request = GenerateRequest(fields={"name": "Alice"})
+        async with ClariveClient(api_key="cl_testkey") as client:
+            result = await client.generate_tab(ENTRY_ID, TAB_ID, request)
+
+        assert route.called
+        assert result.rendered_prompts[0].content == "Hello Alice"

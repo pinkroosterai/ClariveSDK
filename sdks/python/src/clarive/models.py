@@ -57,6 +57,25 @@ class Prompt:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class TabSummary:
+    """Summary of a tab on a prompt entry."""
+
+    id: UUID
+    name: str
+    is_main_tab: bool
+    forked_from_version: int | None
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> TabSummary:
+        return cls(
+            id=UUID(str(data["id"])),
+            name=str(data["name"]),
+            is_main_tab=bool(data["isMainTab"]),
+            forked_from_version=data.get("forkedFromVersion"),
+        )
+
+
 def _parse_datetime(value: Any) -> datetime:
     """Parse an ISO 8601 datetime string."""
     return datetime.fromisoformat(str(value))
@@ -81,9 +100,12 @@ class PromptEntry:
     tags: list[str]
     updated_at: datetime
     published_at: datetime | None
+    tabs: list[TabSummary]
+    tab_count: int
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PromptEntry:
+        raw_tabs = data.get("tabs", [])
         return cls(
             id=UUID(str(data["id"])),
             title=str(data["title"]),
@@ -93,6 +115,8 @@ class PromptEntry:
             tags=data.get("tags", []),
             updated_at=_parse_datetime(data["updatedAt"]),
             published_at=_parse_datetime_optional(data.get("publishedAt")),
+            tabs=[TabSummary.from_dict(t) for t in raw_tabs],
+            tab_count=int(data.get("tabCount", 0)),
         )
 
 
@@ -157,9 +181,12 @@ class EntrySummary:
     tags: list[str]
     created_at: datetime
     updated_at: datetime
+    tabs: list[TabSummary]
+    tab_count: int
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> EntrySummary:
+        raw_tabs = data.get("tabs", [])
         return cls(
             id=UUID(str(data["id"])),
             title=str(data["title"]),
@@ -172,6 +199,8 @@ class EntrySummary:
             tags=data.get("tags", []),
             created_at=_parse_datetime(data["createdAt"]),
             updated_at=_parse_datetime(data["updatedAt"]),
+            tabs=[TabSummary.from_dict(t) for t in raw_tabs],
+            tab_count=int(data.get("tabCount", 0)),
         )
 
 

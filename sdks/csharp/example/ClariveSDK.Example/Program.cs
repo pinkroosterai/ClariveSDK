@@ -80,3 +80,20 @@ foreach (var rendered in result.RenderedPrompts)
     Console.WriteLine($"\n  Rendered Prompt #{rendered.Order}:");
     Console.WriteLine($"  {rendered.Content}");
 }
+
+// List tabs for the entry
+// NOTE: Tab methods (ListTabsAsync, GetTabAsync, GenerateTabAsync) are available
+// in the SDK source but require a version > 0.2.x to be published on NuGet.
+// Uncomment the following once the package is updated:
+//
+// Console.WriteLine("\n=== List Tabs ===");
+// var tabsList = await client.ListTabsAsync(entryId);
+// Console.WriteLine($"Tabs: {tabsList.Count}");
+// foreach (var tab in tabsList)
+//     Console.WriteLine($"  {tab.Name} (main: {tab.IsMainTab})");
+//
+// if (tabsList.Count > 0)
+// {
+//     var tabEntry = await client.GetTabAsync(entryId, tabsList[0].Id);
+//     var tabResult = await client.GenerateTabAsync(entryId, tabsList[0].Id, request);
+// }

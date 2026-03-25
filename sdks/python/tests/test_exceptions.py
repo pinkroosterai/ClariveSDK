@@ -39,6 +39,11 @@ class TestFromResponse:
         assert err.error_code == "NOT_FOUND"
         assert err.status_code == 404
 
+    def test_tab_not_found_returns_not_found_error(self) -> None:
+        err = ClariveApiError.from_response(404, "TAB_NOT_FOUND", "Tab not found.")
+        assert isinstance(err, ClariveNotFoundError)
+        assert err.status_code == 404
+
     def test_validation_error_returns_validation_error_with_details(self) -> None:
         details = {"age": "Must be an integer", "color": "Must be one of: red, green"}
         err = ClariveApiError.from_response(422, "VALIDATION_ERROR", "Validation failed", details)

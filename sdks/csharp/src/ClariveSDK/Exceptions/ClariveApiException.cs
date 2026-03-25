@@ -49,7 +49,7 @@ public class ClariveApiException : HttpRequestException
         return code switch
         {
             "UNAUTHORIZED" => new ClariveAuthenticationException(message),
-            "NOT_FOUND" or "ENTRY_NOT_FOUND" or "NO_PUBLISHED_VERSION" => new ClariveNotFoundException(message),
+            "NOT_FOUND" or "ENTRY_NOT_FOUND" or "NO_PUBLISHED_VERSION" or "TAB_NOT_FOUND" => new ClariveNotFoundException(message),
             "VALIDATION_ERROR" => new ClariveValidationException(message, details ?? new Dictionary<string, string>()),
             "RATE_LIMITED" => new ClariveRateLimitException(message),
             _ => new ClariveApiException(code, message, statusCode)

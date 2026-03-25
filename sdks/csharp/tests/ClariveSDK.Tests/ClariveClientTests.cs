@@ -30,7 +30,9 @@ public class ClariveClientTests
             new List<Prompt>(),
             new List<string> { "test" },
             DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime(),
-            DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime());
+            DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime(),
+            new List<TabSummary>(),
+            0);
 
         var handler = new MockHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
@@ -154,7 +156,9 @@ public class ClariveClientTests
                     firstPromptPreview = "Hello {{name}}",
                     tags = new[] { "test" },
                     createdAt = "2026-03-18T10:00:00Z",
-                    updatedAt = "2026-03-18T10:00:00Z"
+                    updatedAt = "2026-03-18T10:00:00Z",
+                    tabs = Array.Empty<object>(),
+                    tabCount = 0
                 }
             },
             totalCount = 1,
@@ -188,6 +192,8 @@ public class ClariveClientTests
         Assert.True(result.Items[0].HasSystemMessage);
         Assert.True(result.Items[0].IsTemplate);
         Assert.False(result.Items[0].IsChain);
+        Assert.Empty(result.Items[0].Tabs);
+        Assert.Equal(0, result.Items[0].TabCount);
     }
 
     [Fact]
@@ -221,5 +227,111 @@ public class ClariveClientTests
         Assert.Equal(5, result[0].EntryCount);
         Assert.Equal("production", result[1].Name);
         Assert.Equal(3, result[1].EntryCount);
+    }
+
+    [Fact]
+    public async Task ListTabsAsync_ReturnsTabList()
+    {
+        var responseBody = new[]
+        {
+            new { id = Guid.Parse("00000000-0000-0000-0000-000000000010"), name = "Main", isMainTab = true, forkedFromVersion = (int?)null },
+            new { id = Guid.Parse("00000000-0000-0000-0000-000000000011"), name = "Formal", isMainTab = false, forkedFromVersion = (int?)3 }
+        };
+
+        var handler = new MockHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(responseBody, JsonOptions),
+                    System.Text.Encoding.UTF8, "application/json")
+            });
+
+        var httpClient = new HttpClient(handler);
+        var client = new ClariveClient(httpClient, CreateOptions());
+
+        var result = await client.ListTabsAsync(TestEntryId);
+
+        Assert.NotNull(handler.LastRequest);
+        Assert.Equal(HttpMethod.Get, handler.LastRequest.Method);
+        Assert.Contains($"entries/{TestEntryId}/tabs", handler.LastRequest.RequestUri?.ToString() ?? "");
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Main", result[0].Name);
+        Assert.True(result[0].IsMainTab);
+        Assert.Null(result[0].ForkedFromVersion);
+        Assert.Equal("Formal", result[1].Name);
+        Assert.False(result[1].IsMainTab);
+        Assert.Equal(3, result[1].ForkedFromVersion);
+    }
+
+    [Fact]
+    public async Task GetTabAsync_SendsCorrectRequest()
+    {
+        var tabId = Guid.Parse("00000000-0000-0000-0000-000000000010");
+        var expectedEntry = new PromptEntry(
+            TestEntryId, "Test Entry", null, 1,
+            new List<Prompt>(),
+            new List<string> { "test" },
+            DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime(),
+            DateTime.Parse("2026-03-18T10:00:00Z").ToUniversalTime(),
+            new List<TabSummary>(),
+            0);
+
+        var handler = new MockHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(expectedEntry, JsonOptions),
+                    System.Text.Encoding.UTF8, "application/json")
+            });
+
+        var httpClient = new HttpClient(handler);
+        var client = new ClariveClient(httpClient, CreateOptions());
+
+        var result = await client.GetTabAsync(TestEntryId, tabId);
+
+        Assert.NotNull(handler.LastRequest);
+        Assert.Equal(HttpMethod.Get, handler.LastRequest.Method);
+        Assert.Equal($"https://test.clarive.app/public/v1/entries/{TestEntryId}/tabs/{tabId}",
+            handler.LastRequest.RequestUri?.ToString());
+
+        Assert.Equal(TestEntryId, result.Id);
+        Assert.Equal("Test Entry", result.Title);
+    }
+
+    [Fact]
+    public async Task GenerateTabAsync_SendsCorrectRequest()
+    {
+        var tabId = Guid.Parse("00000000-0000-0000-0000-000000000010");
+        var expectedResponse = new GenerateResponse(
+            TestEntryId, "Test Entry", 1, null,
+            new List<RenderedPrompt> { new("Rendered content", 1) });
+
+        var handler = new MockHttpMessageHandler(_ =>
+            new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    JsonSerializer.Serialize(expectedResponse, JsonOptions),
+                    System.Text.Encoding.UTF8, "application/json")
+            });
+
+        var httpClient = new HttpClient(handler);
+        var client = new ClariveClient(httpClient, CreateOptions());
+
+        var request = new GenerateRequest
+        {
+            Fields = new Dictionary<string, string> { ["name"] = "Alice" }
+        };
+
+        var result = await client.GenerateTabAsync(TestEntryId, tabId, request);
+
+        Assert.NotNull(handler.LastRequest);
+        Assert.Equal(HttpMethod.Post, handler.LastRequest.Method);
+        Assert.Equal($"https://test.clarive.app/public/v1/entries/{TestEntryId}/tabs/{tabId}/generate",
+            handler.LastRequest.RequestUri?.ToString());
+
+        Assert.Equal(TestEntryId, result.Id);
+        Assert.Single(result.RenderedPrompts);
+        Assert.Equal("Rendered content", result.RenderedPrompts[0].Content);
     }
 }

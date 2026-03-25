@@ -40,7 +40,11 @@ public class ModelDeserializationTests
           ],
           "tags": ["test"],
           "updatedAt": "2026-03-18T10:00:00Z",
-          "publishedAt": "2026-03-18T10:00:00Z"
+          "publishedAt": "2026-03-18T10:00:00Z",
+          "tabs": [
+            { "id": "00000000-0000-0000-0000-000000000010", "name": "Main", "isMainTab": true, "forkedFromVersion": null }
+          ],
+          "tabCount": 1
         }
         """;
 
@@ -67,6 +71,12 @@ public class ModelDeserializationTests
         Assert.Null(field.DefaultValue);
         Assert.Null(field.Min);
         Assert.Null(field.Max);
+
+        Assert.Single(entry.Tabs);
+        Assert.Equal("Main", entry.Tabs[0].Name);
+        Assert.True(entry.Tabs[0].IsMainTab);
+        Assert.Null(entry.Tabs[0].ForkedFromVersion);
+        Assert.Equal(1, entry.TabCount);
     }
 
     [Fact]
@@ -81,7 +91,9 @@ public class ModelDeserializationTests
           "prompts": [],
           "tags": ["test"],
           "updatedAt": "2026-03-18T10:00:00Z",
-          "publishedAt": "2026-03-18T10:00:00Z"
+          "publishedAt": "2026-03-18T10:00:00Z",
+          "tabs": [],
+          "tabCount": 0
         }
         """;
 

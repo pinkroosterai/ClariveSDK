@@ -27,6 +27,7 @@ export class ClariveApiError extends ClariveError {
       case "NOT_FOUND":
       case "ENTRY_NOT_FOUND":
       case "NO_PUBLISHED_VERSION":
+      case "TAB_NOT_FOUND":
         return new ClariveNotFoundError(message);
       case "VALIDATION_ERROR":
         return new ClariveValidationError(message, details ?? {});

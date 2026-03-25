@@ -65,3 +65,25 @@ for (const rendered of result.renderedPrompts) {
   console.log(`\n  Rendered Prompt #${rendered.order}:`);
   console.log(`  ${rendered.content}`);
 }
+
+// List tabs for the entry
+console.log("\n=== List Tabs ===");
+const tabsList = await client.listTabs(entryId);
+console.log(`Tabs: ${tabsList.length}`);
+for (const tab of tabsList) {
+  console.log(`  ${tab.name} (main: ${tab.isMainTab}, forked from: ${tab.forkedFromVersion ?? "n/a"})`);
+}
+
+// Get a specific tab and generate from it
+if (tabsList.length > 0) {
+  const tabId = tabsList[0].id;
+  console.log(`\n=== Get Tab: ${tabsList[0].name} ===`);
+  const tabEntry = await client.getTab(entryId, tabId);
+  console.log(`Title: ${tabEntry.title}, Version: ${tabEntry.version}, Prompts: ${tabEntry.prompts.length}`);
+
+  console.log("\n=== Generate from Tab ===");
+  const tabResult = await client.generateTab(entryId, tabId, request);
+  for (const rendered of tabResult.renderedPrompts) {
+    console.log(`  Rendered: ${rendered.content.slice(0, 80)}...`);
+  }
+}

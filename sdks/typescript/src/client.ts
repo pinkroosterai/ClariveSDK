@@ -7,6 +7,7 @@ import type {
   ListEntriesOptions,
   PaginatedResponse,
   PromptEntry,
+  TabSummary,
   TagInfo,
 } from "./models.js";
 import { type ClariveOptions, DEFAULT_BASE_URL, validateOptions } from "./options.js";
@@ -149,5 +150,34 @@ export class ClariveClient {
   async listTags(): Promise<TagInfo[]> {
     const response = await this.requestWithResilience("GET", `${this.baseUrl}/tags`);
     return (await response.json()) as TagInfo[];
+  }
+
+  async listTabs(entryId: string): Promise<TabSummary[]> {
+    const response = await this.requestWithResilience(
+      "GET",
+      `${this.baseUrl}/entries/${entryId}/tabs`,
+    );
+    return (await response.json()) as TabSummary[];
+  }
+
+  async getTab(entryId: string, tabId: string): Promise<PromptEntry> {
+    const response = await this.requestWithResilience(
+      "GET",
+      `${this.baseUrl}/entries/${entryId}/tabs/${tabId}`,
+    );
+    return (await response.json()) as PromptEntry;
+  }
+
+  async generateTab(
+    entryId: string,
+    tabId: string,
+    request: GenerateRequest,
+  ): Promise<GenerateResponse> {
+    const response = await this.requestWithResilience(
+      "POST",
+      `${this.baseUrl}/entries/${entryId}/tabs/${tabId}/generate`,
+      JSON.stringify(request),
+    );
+    return (await response.json()) as GenerateResponse;
   }
 }

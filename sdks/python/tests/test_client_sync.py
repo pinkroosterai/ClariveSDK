@@ -36,6 +36,15 @@ ENTRY_RESPONSE = {
     "tags": ["test"],
     "updatedAt": "2026-03-18T10:00:00Z",
     "publishedAt": "2026-03-18T10:00:00Z",
+    "tabs": [
+        {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "name": "Main",
+            "isMainTab": True,
+            "forkedFromVersion": None,
+        }
+    ],
+    "tabCount": 1,
 }
 
 GENERATE_RESPONSE = {

@@ -4,6 +4,7 @@ from clarive.models import (
     GenerateRequest,
     GenerateResponse,
     PromptEntry,
+    TabSummary,
 )
 
 ENTRY_JSON = {
@@ -33,6 +34,15 @@ ENTRY_JSON = {
     "tags": ["test"],
     "updatedAt": "2026-03-18T10:00:00Z",
     "publishedAt": "2026-03-18T10:00:00Z",
+    "tabs": [
+        {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "name": "Main",
+            "isMainTab": True,
+            "forkedFromVersion": None,
+        }
+    ],
+    "tabCount": 1,
 }
 
 GENERATE_RESPONSE_JSON = {
@@ -65,6 +75,11 @@ class TestPromptEntryFromDict:
         assert entry.tags == ["test"]
         assert entry.updated_at is not None
         assert entry.published_at is not None
+        assert len(entry.tabs) == 1
+        assert entry.tabs[0].name == "Main"
+        assert entry.tabs[0].is_main_tab is True
+        assert entry.tabs[0].forked_from_version is None
+        assert entry.tab_count == 1
 
     def test_deserializes_prompt_with_template_fields(self) -> None:
         entry = PromptEntry.from_dict(ENTRY_JSON)
@@ -195,6 +210,32 @@ class TestGenerateResponseFromDict:
         data = {**GENERATE_RESPONSE_JSON, "systemMessage": None}
         resp = GenerateResponse.from_dict(data)
         assert resp.system_message is None
+
+
+class TestTabSummaryFromDict:
+    def test_deserializes_full_tab(self) -> None:
+        data = {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "name": "Formal Tone",
+            "isMainTab": False,
+            "forkedFromVersion": 3,
+        }
+        tab = TabSummary.from_dict(data)
+
+        assert tab.id == UUID("00000000-0000-0000-0000-000000000010")
+        assert tab.name == "Formal Tone"
+        assert tab.is_main_tab is False
+        assert tab.forked_from_version == 3
+
+    def test_null_forked_from_version(self) -> None:
+        data = {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "name": "Main",
+            "isMainTab": True,
+            "forkedFromVersion": None,
+        }
+        tab = TabSummary.from_dict(data)
+        assert tab.forked_from_version is None
 
 
 class TestGenerateRequest:

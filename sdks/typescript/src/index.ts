@@ -17,6 +17,7 @@ export type {
   Prompt,
   PromptEntry,
   RenderedPrompt,
+  TabSummary,
   TagInfo,
   TemplateField,
 } from "./models.js";

@@ -28,7 +28,7 @@ class ClariveApiError(ClariveError):
         match code:
             case "UNAUTHORIZED":
                 return ClariveAuthenticationError(message)
-            case "NOT_FOUND" | "ENTRY_NOT_FOUND" | "NO_PUBLISHED_VERSION":
+            case "NOT_FOUND" | "ENTRY_NOT_FOUND" | "NO_PUBLISHED_VERSION" | "TAB_NOT_FOUND":
                 return ClariveNotFoundError(message)
             case "VALIDATION_ERROR":
                 return ClariveValidationError(message, details or {})

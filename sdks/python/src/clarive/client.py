@@ -17,6 +17,7 @@ from clarive.models import (
     ListEntriesOptions,
     PaginatedResponse,
     PromptEntry,
+    TabSummary,
     TagInfo,
 )
 from clarive.options import ClariveOptions
@@ -262,6 +263,72 @@ class ClariveClient(_BaseClariveClient):
         data: list[dict[str, Any]] = response.json()
         return [TagInfo.from_dict(t) for t in data]
 
+    async def list_tabs(self, entry_id: UUID) -> list[TabSummary]:
+        """List tabs for a prompt entry.
+
+        Args:
+            entry_id: The unique identifier of the prompt entry.
+
+        Returns:
+            A list of tab summaries.
+
+        Raises:
+            ClariveNotFoundError: The entry does not exist or is trashed.
+            ClariveAuthenticationError: The API key is invalid or missing.
+            ClariveRateLimitError: The rate limit has been exceeded.
+        """
+        response = await self._request_with_resilience("GET", f"entries/{entry_id}/tabs")
+        data: list[dict[str, Any]] = response.json()
+        return [TabSummary.from_dict(t) for t in data]
+
+    async def get_tab(self, entry_id: UUID, tab_id: UUID) -> PromptEntry:
+        """Retrieve a specific tab of a prompt entry.
+
+        Args:
+            entry_id: The unique identifier of the prompt entry.
+            tab_id: The unique identifier of the tab.
+
+        Returns:
+            The tab as a prompt entry with its prompts and template fields.
+
+        Raises:
+            ClariveNotFoundError: The entry or tab does not exist.
+            ClariveAuthenticationError: The API key is invalid or missing.
+            ClariveRateLimitError: The rate limit has been exceeded.
+        """
+        response = await self._request_with_resilience(
+            "GET", f"entries/{entry_id}/tabs/{tab_id}"
+        )
+        data: dict[str, object] = response.json()
+        return PromptEntry.from_dict(data)
+
+    async def generate_tab(
+        self, entry_id: UUID, tab_id: UUID, request: GenerateRequest
+    ) -> GenerateResponse:
+        """Render a tab by substituting template variables.
+
+        Args:
+            entry_id: The unique identifier of the prompt entry.
+            tab_id: The unique identifier of the tab.
+            request: The template field values to substitute.
+
+        Returns:
+            The rendered prompts with all template variables replaced.
+
+        Raises:
+            ClariveValidationError: Template field values are invalid.
+            ClariveNotFoundError: The entry or tab does not exist.
+            ClariveAuthenticationError: The API key is invalid or missing.
+            ClariveRateLimitError: The rate limit has been exceeded.
+        """
+        response = await self._request_with_resilience(
+            "POST",
+            f"entries/{entry_id}/tabs/{tab_id}/generate",
+            json_body=request.to_dict(),
+        )
+        data: dict[str, object] = response.json()
+        return GenerateResponse.from_dict(data)
+
 
 class ClariveClientSync(_BaseClariveClient):
     """Synchronous client for the Clarive Public API.
@@ -399,3 +466,53 @@ class ClariveClientSync(_BaseClariveClient):
         response = self._request_with_resilience("GET", "tags")
         data: list[dict[str, Any]] = response.json()
         return [TagInfo.from_dict(t) for t in data]
+
+    def list_tabs(self, entry_id: UUID) -> list[TabSummary]:
+        """List tabs for a prompt entry.
+
+        Args:
+            entry_id: The unique identifier of the prompt entry.
+
+        Returns:
+            A list of tab summaries.
+        """
+        response = self._request_with_resilience("GET", f"entries/{entry_id}/tabs")
+        data: list[dict[str, Any]] = response.json()
+        return [TabSummary.from_dict(t) for t in data]
+
+    def get_tab(self, entry_id: UUID, tab_id: UUID) -> PromptEntry:
+        """Retrieve a specific tab of a prompt entry.
+
+        Args:
+            entry_id: The unique identifier of the prompt entry.
+            tab_id: The unique identifier of the tab.
+
+        Returns:
+            The tab as a prompt entry with its prompts and template fields.
+        """
+        response = self._request_with_resilience(
+            "GET", f"entries/{entry_id}/tabs/{tab_id}"
+        )
+        data: dict[str, object] = response.json()
+        return PromptEntry.from_dict(data)
+
+    def generate_tab(
+        self, entry_id: UUID, tab_id: UUID, request: GenerateRequest
+    ) -> GenerateResponse:
+        """Render a tab by substituting template variables.
+
+        Args:
+            entry_id: The unique identifier of the prompt entry.
+            tab_id: The unique identifier of the tab.
+            request: The template field values to substitute.
+
+        Returns:
+            The rendered prompts with all template variables replaced.
+        """
+        response = self._request_with_resilience(
+            "POST",
+            f"entries/{entry_id}/tabs/{tab_id}/generate",
+            json_body=request.to_dict(),
+        )
+        data: dict[str, object] = response.json()
+        return GenerateResponse.from_dict(data)

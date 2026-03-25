@@ -78,7 +78,7 @@ API errors throw typed classes. All API exceptions extend `ClariveApiError`, whi
 | `ClariveAuthenticationError` | 401 | Invalid or missing API key |
 | `ClariveNotFoundError` | 404 | Entry doesn't exist or is trashed |
 | `ClariveValidationError` | 422 | Bad template field values |
-| `ClariveRateLimitError` | 429 | Too many requests (limit: 20/min) |
+| `ClariveRateLimitError` | 429 | Too many requests (limit: 600/min) |
 
 `ClariveCircuitOpenError` extends `ClariveError` directly, not `ClariveApiError`. Catching `ClariveApiError` won't accidentally swallow circuit breaker errors.
 
@@ -114,6 +114,9 @@ try {
 | `generate(entryId: string, request: GenerateRequest)` | `Promise<GenerateResponse>` | Renders prompts with template variable substitution |
 | `listEntries(options?: ListEntriesOptions)` | `Promise<PaginatedResponse<EntrySummary>>` | Lists published entries with filtering, search, and pagination |
 | `listTags()` | `Promise<TagInfo[]>` | Lists all tags with entry counts |
+| `listTabs(entryId: string)` | `Promise<TabSummary[]>` | Lists tabs for an entry |
+| `getTab(entryId: string, tabId: string)` | `Promise<PromptEntry>` | Retrieves a specific tab |
+| `generateTab(entryId: string, tabId: string, request: GenerateRequest)` | `Promise<GenerateResponse>` | Renders a tab with template variable substitution |
 
 ### Models
 
@@ -121,7 +124,7 @@ All models are TypeScript interfaces with full IntelliSense support.
 
 **`PromptEntry`** — a published prompt entry.
 
-- `id` (string), `title` (string), `version` (number), `systemMessage` (string | null), `prompts` (Prompt[]), `tags` (string[]), `updatedAt` (string), `publishedAt` (string | null)
+- `id` (string), `title` (string), `version` (number), `systemMessage` (string | null), `prompts` (Prompt[]), `tags` (string[]), `updatedAt` (string), `publishedAt` (string | null), `tabs` (TabSummary[]), `tabCount` (number)
 
 **`Prompt`** — a single prompt within an entry.
 
@@ -145,7 +148,11 @@ All models are TypeScript interfaces with full IntelliSense support.
 
 **`EntrySummary`** — compact entry representation from `listEntries()`.
 
-- `id`, `title`, `version`, `hasSystemMessage`, `isTemplate`, `isChain`, `promptCount`, `firstPromptPreview`, `tags`, `createdAt`, `updatedAt`
+- `id`, `title`, `version`, `hasSystemMessage`, `isTemplate`, `isChain`, `promptCount`, `firstPromptPreview`, `tags`, `createdAt`, `updatedAt`, `tabs` (TabSummary[]), `tabCount` (number)
+
+**`TabSummary`** — summary of a tab on a prompt entry.
+
+- `id` (string), `name` (string), `isMainTab` (boolean), `forkedFromVersion` (number | null)
 
 **`PaginatedResponse<T>`** — pagination wrapper.
 

@@ -6,6 +6,7 @@ import type {
   GenerateResponse,
   PaginatedResponse,
   PromptEntry,
+  TabSummary,
   TagInfo,
 } from "../src/models.js";
 
@@ -39,6 +40,15 @@ const ENTRY_RESPONSE: PromptEntry = {
   tags: ["test"],
   updatedAt: "2026-03-18T10:00:00Z",
   publishedAt: "2026-03-18T10:00:00Z",
+  tabs: [
+    {
+      id: "00000000-0000-0000-0000-000000000010",
+      name: "Main",
+      isMainTab: true,
+      forkedFromVersion: null,
+    },
+  ],
+  tabCount: 1,
 };
 
 const LIST_ENTRIES_RESPONSE: PaginatedResponse<EntrySummary> = {
@@ -55,6 +65,8 @@ const LIST_ENTRIES_RESPONSE: PaginatedResponse<EntrySummary> = {
       tags: ["test"],
       createdAt: "2026-03-18T10:00:00Z",
       updatedAt: "2026-03-18T10:00:00Z",
+      tabs: [],
+      tabCount: 0,
     },
   ],
   totalCount: 1,
@@ -241,6 +253,77 @@ describe("ClariveClient", () => {
       expect(result[0].entryCount).toBe(5);
       expect(result[1].name).toBe("production");
       expect(result[1].entryCount).toBe(3);
+    });
+  });
+
+  const TAB_ID = "00000000-0000-0000-0000-000000000010";
+
+  const LIST_TABS_RESPONSE: TabSummary[] = [
+    { id: TAB_ID, name: "Main", isMainTab: true, forkedFromVersion: null },
+    {
+      id: "00000000-0000-0000-0000-000000000011",
+      name: "Formal",
+      isMainTab: false,
+      forkedFromVersion: 3,
+    },
+  ];
+
+  describe("listTabs", () => {
+    it("sends GET to /entries/{id}/tabs and returns TabSummary array", async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse(LIST_TABS_RESPONSE));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey", resilience: { enabled: false } });
+      const result = await client.listTabs(ENTRY_ID);
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/entries/${ENTRY_ID}/tabs`);
+      expect(init.method).toBe("GET");
+
+      expect(result).toHaveLength(2);
+      expect(result[0].name).toBe("Main");
+      expect(result[0].isMainTab).toBe(true);
+      expect(result[1].forkedFromVersion).toBe(3);
+    });
+  });
+
+  describe("getTab", () => {
+    it("sends GET to /entries/{id}/tabs/{tabId} and returns PromptEntry", async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse(ENTRY_RESPONSE));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey" });
+      const entry = await client.getTab(ENTRY_ID, TAB_ID);
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url] = fetchMock.mock.calls[0] as [string];
+      expect(url).toBe(`${BASE_URL}/entries/${ENTRY_ID}/tabs/${TAB_ID}`);
+
+      expect(entry.id).toBe(ENTRY_ID);
+      expect(entry.title).toBe("Test Entry");
+    });
+
+    it("throws ClariveNotFoundError on TAB_NOT_FOUND", async () => {
+      const errorBody = { error: { code: "TAB_NOT_FOUND", message: "Tab not found." } };
+      fetchMock.mockResolvedValue(mockFetchResponse(errorBody, 404));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey", resilience: { enabled: false } });
+      await expect(client.getTab(ENTRY_ID, TAB_ID)).rejects.toBeInstanceOf(ClariveNotFoundError);
+    });
+  });
+
+  describe("generateTab", () => {
+    it("sends POST to /entries/{id}/tabs/{tabId}/generate", async () => {
+      fetchMock.mockResolvedValue(mockFetchResponse(GENERATE_RESPONSE));
+
+      const client = new ClariveClient({ apiKey: "cl_testkey" });
+      const result = await client.generateTab(ENTRY_ID, TAB_ID, { fields: { name: "Alice" } });
+
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+      expect(url).toBe(`${BASE_URL}/entries/${ENTRY_ID}/tabs/${TAB_ID}/generate`);
+      expect(init.method).toBe("POST");
+
+      expect(result.renderedPrompts[0].content).toBe("Hello Alice");
     });
   });
 

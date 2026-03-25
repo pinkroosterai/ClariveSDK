@@ -110,6 +110,38 @@ public class ClariveClient : IClariveClient
         return result ?? throw new InvalidOperationException("Response deserialized to null.");
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TabSummary>> ListTabsAsync(Guid entryId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"entries/{entryId}/tabs", cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+
+        var result = await response.Content.ReadFromJsonAsync<List<TabSummary>>(JsonOptions, cancellationToken).ConfigureAwait(false);
+        return result ?? throw new InvalidOperationException("Response deserialized to null.");
+    }
+
+    /// <inheritdoc />
+    public async Task<PromptEntry> GetTabAsync(Guid entryId, Guid tabId, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync($"entries/{entryId}/tabs/{tabId}", cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+
+        var entry = await response.Content.ReadFromJsonAsync<PromptEntry>(JsonOptions, cancellationToken).ConfigureAwait(false);
+        return entry ?? throw new InvalidOperationException("Response deserialized to null.");
+    }
+
+    /// <inheritdoc />
+    public async Task<GenerateResponse> GenerateTabAsync(Guid entryId, Guid tabId, GenerateRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var response = await _httpClient.PostAsJsonAsync($"entries/{entryId}/tabs/{tabId}/generate", request, JsonOptions, cancellationToken).ConfigureAwait(false);
+        await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(false);
+
+        var result = await response.Content.ReadFromJsonAsync<GenerateResponse>(JsonOptions, cancellationToken).ConfigureAwait(false);
+        return result ?? throw new InvalidOperationException("Response deserialized to null.");
+    }
+
     private static string BuildListEntriesQuery(ListEntriesOptions? options)
     {
         if (options is null) return string.Empty;

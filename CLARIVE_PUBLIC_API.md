@@ -8,7 +8,7 @@ The Clarive Public API provides programmatic access to published prompt entries.
 - **Protocol**: HTTPS
 - **Response Format**: JSON (camelCase property names)
 - **Authentication**: API Key via `X-Api-Key` header
-- **Rate Limiting**: 20 requests per minute per IP (fixed window)
+- **Rate Limiting**: 600 requests per minute per API key (fixed window)
 
 ---
 
@@ -72,7 +72,11 @@ GET /public/v1/entries
       "firstPromptPreview": "Draft a reply to the following customer inquiry...",
       "tags": ["support", "customer"],
       "createdAt": "2026-03-15T10:00:00Z",
-      "updatedAt": "2026-03-18T10:00:00Z"
+      "updatedAt": "2026-03-18T10:00:00Z",
+      "tabs": [
+        { "id": "a1b2c3d4-0000-0000-0000-000000000001", "name": "Main", "isMainTab": true, "forkedFromVersion": null }
+      ],
+      "tabCount": 1
     }
   ],
   "totalCount": 42,
@@ -96,6 +100,8 @@ GET /public/v1/entries
 | `tags` | string[] | Tags assigned to the entry |
 | `createdAt` | string (ISO 8601) | When the entry was created |
 | `updatedAt` | string (ISO 8601) | When the entry was last updated |
+| `tabs` | TabSummary[] | Tab summaries for this entry |
+| `tabCount` | integer | Number of tabs on this entry |
 
 #### Pagination Wrapper
 
@@ -151,7 +157,11 @@ GET /public/v1/entries/{entryId}
   ],
   "tags": ["support", "customer"],
   "updatedAt": "2026-03-18T10:00:00Z",
-  "publishedAt": "2026-03-17T14:30:00Z"
+  "publishedAt": "2026-03-17T14:30:00Z",
+  "tabs": [
+    { "id": "a1b2c3d4-0000-0000-0000-000000000001", "name": "Main", "isMainTab": true, "forkedFromVersion": null }
+  ],
+  "tabCount": 1
 }
 ```
 
@@ -171,6 +181,17 @@ GET /public/v1/entries/{entryId}
 | `tags` | string[] | Tags assigned to the entry |
 | `updatedAt` | string (ISO 8601) | When the entry was last updated |
 | `publishedAt` | string (ISO 8601) \| null | When the current version was published |
+| `tabs` | TabSummary[] | Tab summaries for this entry |
+| `tabCount` | integer | Number of tabs on this entry |
+
+#### Tab Summary Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string (GUID) | Unique identifier of the tab |
+| `name` | string | Display name of the tab |
+| `isMainTab` | boolean | Whether this is the main (default) tab |
+| `forkedFromVersion` | integer \| null | Version number this tab was forked from, if any |
 
 #### Template Field Object
 
@@ -256,6 +277,77 @@ POST /public/v1/entries/{entryId}/generate
 
 ---
 
+### List Tabs
+
+Lists tabs for a prompt entry. Response is cached for 5 minutes.
+
+```
+GET /public/v1/entries/{entryId}/tabs
+```
+
+#### Path Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entryId` | GUID | Yes | Unique identifier of the prompt entry |
+
+#### Response `200 OK`
+
+```json
+[
+  { "id": "a1b2c3d4-0000-0000-0000-000000000001", "name": "Main", "isMainTab": true, "forkedFromVersion": null },
+  { "id": "b2c3d4e5-0000-0000-0000-000000000002", "name": "Formal Tone", "isMainTab": false, "forkedFromVersion": 3 }
+]
+```
+
+---
+
+### Get Tab
+
+Retrieves a specific tab of a prompt entry. Returns the same shape as Get Published Prompt Entry.
+
+```
+GET /public/v1/entries/{entryId}/tabs/{tabId}
+```
+
+#### Path Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entryId` | GUID | Yes | Unique identifier of the prompt entry |
+| `tabId` | GUID | Yes | Unique identifier of the tab |
+
+#### Response `200 OK`
+
+Same shape as [Get Published Prompt Entry](#get-published-prompt-entry).
+
+---
+
+### Generate from Tab
+
+Renders a tab by substituting template variables. Same request/response shape as Generate Rendered Prompt Entry.
+
+```
+POST /public/v1/entries/{entryId}/tabs/{tabId}/generate
+```
+
+#### Path Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `entryId` | GUID | Yes | Unique identifier of the prompt entry |
+| `tabId` | GUID | Yes | Unique identifier of the tab |
+
+#### Request Body
+
+Same shape as [Generate Rendered Prompt Entry](#generate-rendered-prompt-entry).
+
+#### Response `200 OK`
+
+Same shape as [Generate Rendered Prompt Entry](#generate-rendered-prompt-entry).
+
+---
+
 ### List Tags
 
 Lists all tags with their entry counts.
@@ -319,8 +411,9 @@ The `details` field is optional and only present for validation errors.
 | 401 | `UNAUTHORIZED` | Invalid or missing API key |
 | 404 | `ENTRY_NOT_FOUND` | Entry does not exist or is trashed |
 | 404 | `NO_PUBLISHED_VERSION` | Entry exists but has no published version |
+| 404 | `TAB_NOT_FOUND` | Tab does not exist for this entry |
 | 422 | `VALIDATION_ERROR` | Template field validation failed (see `details` for per-field errors) |
-| 429 | `RATE_LIMITED` | Rate limit exceeded (20 req/min) |
+| 429 | `RATE_LIMITED` | Rate limit exceeded (600 req/min) |
 | 500 | `INTERNAL_ERROR` | Unexpected server error |
 
 ### Validation Error Example
@@ -344,10 +437,20 @@ The `details` field is optional and only present for validation errors.
 
 | Property | Value |
 |----------|-------|
-| Limit | 20 requests per minute |
+| Limit | 600 requests per minute |
 | Window | Fixed 1-minute window |
-| Partition | Client IP address |
-| Exceeded response | `429 Too Many Requests` |
+| Partition | API key (falls back to client IP if unauthenticated) |
+| Exceeded response | `429 Too Many Requests` with `Retry-After` header |
+
+### Rate Limit Response Headers
+
+All `/public/v1/` responses include rate limit headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed per window |
+| `X-RateLimit-Remaining` | Remaining requests in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
 
 ---
 
@@ -363,7 +466,7 @@ All public API calls are logged with:
 
 - Tenant ID
 - API key ID and name
-- Action type (`ApiGet`, `ApiGenerate`, or `ApiList`)
+- Action type (`ApiGet`, `ApiGenerate`, `ApiList`, `ApiGetTab`, or `ApiGenerateTab`)
 - Entry ID and title (where applicable)
 - Timestamp
 
@@ -408,6 +511,34 @@ curl -X GET "https://demo.clarive.app/public/v1/tags" \
   -H "X-Api-Key: cl_your_api_key_here"
 ```
 
+**List tabs for an entry:**
+
+```bash
+curl -X GET "https://demo.clarive.app/public/v1/entries/3fa85f64-5717-4562-b3fc-2c963f66afa6/tabs" \
+  -H "X-Api-Key: cl_your_api_key_here"
+```
+
+**Get a specific tab:**
+
+```bash
+curl -X GET "https://demo.clarive.app/public/v1/entries/3fa85f64-5717-4562-b3fc-2c963f66afa6/tabs/a1b2c3d4-0000-0000-0000-000000000001" \
+  -H "X-Api-Key: cl_your_api_key_here"
+```
+
+**Generate from a tab:**
+
+```bash
+curl -X POST "https://demo.clarive.app/public/v1/entries/3fa85f64-5717-4562-b3fc-2c963f66afa6/tabs/a1b2c3d4-0000-0000-0000-000000000001/generate" \
+  -H "X-Api-Key: cl_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fields": {
+      "userName": "Alice",
+      "topic": "machine learning"
+    }
+  }'
+```
+
 ### Python
 
 ```python
@@ -427,6 +558,15 @@ async with ClariveClient(api_key="cl_your_api_key_here", base_url="https://demo.
 
     # List tags
     tags = await client.list_tags()
+
+    # List tabs
+    tabs = await client.list_tabs(entry.id)
+
+    # Get a tab
+    tab = await client.get_tab(entry.id, tabs[0].id)
+
+    # Generate from a tab
+    tab_result = await client.generate_tab(entry.id, tabs[0].id, GenerateRequest(fields={"userName": "Alice"}))
 ```
 
 ### TypeScript
@@ -450,6 +590,15 @@ const result = await client.generate(entry.id, { fields: { userName: "Alice" } }
 
 // List tags
 const tags = await client.listTags();
+
+// List tabs
+const tabs = await client.listTabs(entry.id);
+
+// Get a tab
+const tab = await client.getTab(entry.id, tabs[0].id);
+
+// Generate from a tab
+const tabResult = await client.generateTab(entry.id, tabs[0].id, { fields: { userName: "Alice" } });
 ```
 
 ### C#
@@ -478,4 +627,16 @@ var result = await client.GenerateAsync(entry.Id, new GenerateRequest
 
 // List tags
 var tags = await client.ListTagsAsync();
+
+// List tabs
+var tabs = await client.ListTabsAsync(entry.Id);
+
+// Get a tab
+var tab = await client.GetTabAsync(entry.Id, tabs[0].Id);
+
+// Generate from a tab
+var tabResult = await client.GenerateTabAsync(entry.Id, tabs[0].Id, new GenerateRequest
+{
+    Fields = new Dictionary<string, string> { ["userName"] = "Alice" }
+});
 ```

@@ -90,7 +90,7 @@ API errors raise typed exceptions. All API exceptions extend `ClariveApiError`, 
 | `ClariveAuthenticationError` | 401 | Invalid or missing API key |
 | `ClariveNotFoundError` | 404 | Entry doesn't exist or is trashed |
 | `ClariveValidationError` | 422 | Bad template field values |
-| `ClariveRateLimitError` | 429 | Too many requests (limit: 20/min) |
+| `ClariveRateLimitError` | 429 | Too many requests (limit: 600/min) |
 
 `ClariveCircuitOpenError` extends `ClariveError` directly — not `ClariveApiError` — so catching `ClariveApiError` won't accidentally swallow circuit breaker errors.
 
@@ -121,6 +121,9 @@ except ClariveCircuitOpenError:
 | `generate(entry_id: UUID, request: GenerateRequest)` | `GenerateResponse` | Renders prompts with template variable substitution |
 | `list_entries(options?: ListEntriesOptions)` | `PaginatedResponse` | Lists published entries with filtering, search, and pagination |
 | `list_tags()` | `list[TagInfo]` | Lists all tags with entry counts |
+| `list_tabs(entry_id: UUID)` | `list[TabSummary]` | Lists tabs for an entry |
+| `get_tab(entry_id: UUID, tab_id: UUID)` | `PromptEntry` | Retrieves a specific tab |
+| `generate_tab(entry_id: UUID, tab_id: UUID, request: GenerateRequest)` | `GenerateResponse` | Renders a tab with template variable substitution |
 
 ### Models
 
@@ -128,7 +131,7 @@ All response models are frozen dataclasses. They're immutable once created.
 
 **`PromptEntry`** — a published prompt entry.
 
-- `id` (UUID), `title` (str), `version` (int), `system_message` (str | None), `prompts` (list[Prompt]), `tags` (list[str]), `updated_at` (datetime), `published_at` (datetime | None)
+- `id` (UUID), `title` (str), `version` (int), `system_message` (str | None), `prompts` (list[Prompt]), `tags` (list[str]), `updated_at` (datetime), `published_at` (datetime | None), `tabs` (list[TabSummary]), `tab_count` (int)
 
 **`Prompt`** — a single prompt within an entry.
 
@@ -152,7 +155,11 @@ All response models are frozen dataclasses. They're immutable once created.
 
 **`EntrySummary`** — compact entry representation from `list_entries()`.
 
-- `id`, `title`, `version`, `has_system_message`, `is_template`, `is_chain`, `prompt_count`, `first_prompt_preview`, `tags`, `created_at`, `updated_at`
+- `id`, `title`, `version`, `has_system_message`, `is_template`, `is_chain`, `prompt_count`, `first_prompt_preview`, `tags`, `created_at`, `updated_at`, `tabs` (list[TabSummary]), `tab_count` (int)
+
+**`TabSummary`** — summary of a tab on a prompt entry.
+
+- `id` (UUID), `name` (str), `is_main_tab` (bool), `forked_from_version` (int | None)
 
 **`PaginatedResponse`** — pagination wrapper.
 

@@ -19,6 +19,7 @@ from clarive.models import (
     Prompt,
     PromptEntry,
     RenderedPrompt,
+    TabSummary,
     TagInfo,
     TemplateField,
 )
@@ -46,6 +47,7 @@ __all__ = [
     "Prompt",
     "PromptEntry",
     "RenderedPrompt",
+    "TabSummary",
     "TagInfo",
     "TemplateField",
 ]

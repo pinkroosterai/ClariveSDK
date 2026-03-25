@@ -80,6 +80,26 @@ async def async_example() -> None:
             print(f"\n  Rendered Prompt #{rendered.order}:")
             print(f"  {rendered.content}")
 
+        # List tabs for the entry
+        print("\n--- List Tabs ---")
+        tabs_list = await client.list_tabs(entry_id)
+        print(f"Tabs: {len(tabs_list)}")
+        for tab in tabs_list:
+            forked = tab.forked_from_version or "n/a"
+            print(f"  {tab.name} (main: {tab.is_main_tab}, forked from: {forked})")
+
+        # Get a specific tab and generate from it
+        if tabs_list:
+            tab_id = tabs_list[0].id
+            print(f"\n--- Get Tab: {tabs_list[0].name} ---")
+            tab_entry = await client.get_tab(entry_id, tab_id)
+            print(f"Title: {tab_entry.title}, Version: {tab_entry.version}")
+
+            print("\n--- Generate from Tab ---")
+            tab_result = await client.generate_tab(entry_id, tab_id, request)
+            for rendered in tab_result.rendered_prompts:
+                print(f"  Rendered: {rendered.content[:80]}...")
+
 
 def sync_example() -> None:
     """Sync client usage with 'with' context manager."""
